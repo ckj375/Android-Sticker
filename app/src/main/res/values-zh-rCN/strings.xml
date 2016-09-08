@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- 贴图素材分类 -->
+    <string name="material_decorate">装扮</string>
+    <string name="material_mode">心情</string>
+    <string name="material_art">文艺</string>
+    <string name="material_cover">遮挡</string>
+    <string name="material_cute">萌物</string>
+
+</resources>

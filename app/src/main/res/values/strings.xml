@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Sticker</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- 贴图素材分类 -->
+    <string name="material_decorate">Decorate</string>
+    <string name="material_mode">Mode</string>
+    <string name="material_art">Art</string>
+    <string name="material_cover">Cover</string>
+    <string name="material_cute">Cute</string>
+
+</resources>
