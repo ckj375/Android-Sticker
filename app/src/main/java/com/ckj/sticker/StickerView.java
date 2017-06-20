@@ -23,6 +23,8 @@ public class StickerView extends View {
     private String imgPath;
     private Bitmap mainBmp, deleteBmp, controlBmp;
     private int mainBmpWidth, mainBmpHeight, deleteBmpWidth, deleteBmpHeight, controlBmpWidth, controlBmpHeight;
+    int resultWidth = mainBmpWidth + deleteBmpWidth / 2 + controlBmpWidth / 2;;
+    int resultHeight = mainBmpHeight + deleteBmpHeight / 2 + controlBmpHeight / 2;;
 
     private float[] srcPs, dstPs;
     private Matrix matrix;
@@ -61,6 +63,8 @@ public class StickerView extends View {
     public static final int CTR_RIGHT_BOTTOM = 2;
     public static final int CTR_MID_MID = 4;
     public int current_ctr = CTR_NONE;
+
+    private boolean unselect;
 
     public StickerView(Context context, String imgPath) {
         super(context);
@@ -134,7 +138,7 @@ public class StickerView extends View {
     }
 
     // 判断触摸点是否在贴图上
-    private boolean isOnPic(int x, int y) {
+    public boolean isOnPic(int x, int y) {
         // 获取逆向矩阵
         Matrix inMatrix = new Matrix();
         matrix.invert(inMatrix);
@@ -148,8 +152,71 @@ public class StickerView extends View {
         }
     }
 
-    private int getOperationType(MotionEvent event) {
+    /**
+     * 判断点所在的控制点
+     *
+     * @param evX
+     * @param evY
+     * @return
+     */
+    private int isOnCP(int evx, int evy) {
+        Rect rect = new Rect(evx - controlBmpWidth / 2, evy - controlBmpHeight / 2, evx + controlBmpWidth / 2, evy + controlBmpHeight / 2);
+        int res = 0;
+        for (int i = 0; i < dstPs.length; i += 2) {
+            if (rect.contains((int) dstPs[i], (int) dstPs[i + 1])) {
+                return res;
+            }
+            ++res;
+        }
+        return CTR_NONE;
+    }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        int evX = (int) event.getX();
+        int evY = (int) event.getY();
+
+        if (!isOnPic(evX, evY) && isOnCP(evX, evY) == CTR_NONE) {
+            isSelected = false;
+        //    requestLayout();
+            invalidate();//重绘
+        } else if (isOnCP(evX, evY) == CTR_LEFT_TOP) {
+            isActive = false;
+        //    requestLayout();
+            invalidate();//重绘
+        } else {
+            int operType = OPER_DEFAULT;
+            operType = getOperationType(event);
+
+            switch (operType) {
+                case OPER_TRANSLATE:
+                    if (isOnPic(evX, evY)) {
+                        translate(evX, evY);
+                    }
+                    break;
+                case OPER_ROTATE:
+                    rotate(event);
+                    scale(event);
+                    break;
+            }
+
+            lastPoint.x = evX;
+            lastPoint.y = evY;
+
+            lastOper = operType;
+            isSelected = true;
+         //   requestLayout();
+            invalidate();//重绘
+        }
+        return true;
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+
+    }
+
+    private int getOperationType(MotionEvent event) {
         int evX = (int) event.getX();
         int evY = (int) event.getY();
         int curOper = lastOper;
@@ -179,62 +246,33 @@ public class StickerView extends View {
 
     }
 
-    /**
-     * 判断点所在的控制点
-     *
-     * @param evX
-     * @param evY
-     * @return
-     */
-    private int isOnCP(int evx, int evy) {
-        Rect rect = new Rect(evx - controlBmpWidth / 2, evy - controlBmpHeight / 2, evx + controlBmpWidth / 2, evy + controlBmpHeight / 2);
-        int res = 0;
-        for (int i = 0; i < dstPs.length; i += 2) {
-            if (rect.contains((int) dstPs[i], (int) dstPs[i + 1])) {
-                return res;
-            }
-            ++res;
-        }
-        return CTR_NONE;
-    }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        int evX = (int) event.getX();
-        int evY = (int) event.getY();
 
-        if (!isOnPic(evX, evY) && isOnCP(evX, evY) == CTR_NONE) {
-            isSelected = false;
-            invalidate();//重绘
-        } else if (isOnCP(evX, evY) == CTR_LEFT_TOP) {
-            isActive = false;
-            invalidate();//重绘
-        } else {
-            int operType = OPER_DEFAULT;
-            operType = getOperationType(event);
-
-            switch (operType) {
-                case OPER_TRANSLATE:
-                    if (isOnPic(evX, evY)) {
-                        translate(evX, evY);
-                    }
-                    break;
-                case OPER_ROTATE:
-                    rotate(event);
-                    scale(event);
-                    break;
-            }
-
-            lastPoint.x = evX;
-            lastPoint.y = evY;
-
-            lastOper = operType;
-            isSelected = true;
-            invalidate();//重绘
-        }
-
-        return true;
-    }
+//    @Override
+//    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+//        int desireWidth = MeasureSpec.getSize(widthMeasureSpec);
+//        int desireHeight = MeasureSpec.getSize(heightMeasureSpec);
+//        switch (MeasureSpec.getMode(widthMeasureSpec)) {
+//            case MeasureSpec.AT_MOST:
+//            case MeasureSpec.UNSPECIFIED:
+//                resultWidth = (mainBmp.getWidth() + deleteBmpWidth/2 + controlBmpWidth/2);
+//                break;
+//            case MeasureSpec.EXACTLY:
+//                resultWidth = desireWidth;
+//                break;
+//        }
+//
+//        switch (MeasureSpec.getMode(heightMeasureSpec)) {
+//            case MeasureSpec.AT_MOST:
+//            case MeasureSpec.UNSPECIFIED:
+//                resultHeight =  (mainBmp.getHeight() + deleteBmpHeight/2 + controlBmpHeight/2);
+//                break;
+//            case MeasureSpec.EXACTLY:
+//                resultHeight = desireHeight;
+//                break;
+//        }
+//        setMeasuredDimension(resultWidth > desireWidth?desireWidth:resultWidth,resultHeight > desireHeight?desireHeight:resultHeight);
+//    }
 
     /**
      * 移动
@@ -420,5 +458,9 @@ public class StickerView extends View {
     // 获取素材图片路径
     public String getImgPath() {
         return imgPath;
+    }
+
+    public void setSelectState(boolean unselect){
+        this.isSelected = unselect;
     }
 }  

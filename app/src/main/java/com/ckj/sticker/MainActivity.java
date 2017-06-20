@@ -27,7 +27,7 @@ import java.util.Date;
 
 public class MainActivity extends Activity {
 
-    private RelativeLayout container;
+    private StickerLayout container;
     private Button saveBtn;
     private ImageView img;
     private Bitmap src;
@@ -42,10 +42,10 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         // 贴图容器
-        container = (RelativeLayout) findViewById(R.id.container);
-        img = (ImageView) findViewById(R.id.src);
+        container = (StickerLayout) findViewById(R.id.layout_sticker);
+      //  img = (ImageView) findViewById(R.id.src);
         src = BitmapFactory.decodeResource(this.getResources(), R.drawable.bg);
-        img.setImageBitmap(src);
+     //   img.setImageBitmap(src);
 
         // 素材集合
         materialList = new ArrayList<StickerView>();
@@ -109,9 +109,9 @@ public class MainActivity extends Activity {
         if (requestCode == REQUEST_FOR_PICTURE && resultCode == RESULT_OK) {
             String imgPath = data.getStringExtra(MaterialActivity.MATERIAL_PATH);
             // 贴图容器中心点
-            int centerX = (img.getLeft() + img.getRight()) / 2;
-            int centerY = (img.getTop() + img.getBottom()) / 2;
-            Log.v("ckjc", "centerX=" + centerX + "  centerY=" + centerY);
+//            int centerX = (img.getLeft() + img.getRight()) / 2;
+//            int centerY = (img.getTop() + img.getBottom()) / 2;
+//            Log.v("ckjc", "centerX=" + centerX + "  centerY=" + centerY);
 
             StickerView view = new StickerView(MainActivity.this, imgPath);
 
@@ -122,7 +122,6 @@ public class MainActivity extends Activity {
             container.addView(view);
             // 添加至素材集合
             materialList.add(view);
-
         }
     }
 
