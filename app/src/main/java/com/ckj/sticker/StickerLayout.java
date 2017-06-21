@@ -13,11 +13,12 @@ import java.util.LinkedList;
 
 /**
  * Created by Administrator on 2017/6/20.
+ * 专门放StickerView的容器，使得StickerView可以同一界面操作多个
+ * 可以添加其他的View作为StickerView的背景View
  */
 
 public class StickerLayout extends FrameLayout {
     private LinkedList<StickerView> mStickerViewList = new LinkedList<>();
-    private StickerView mSelectedStickerView;
 
     public StickerLayout(@NonNull Context context) {
         super(context);
@@ -35,6 +36,7 @@ public class StickerLayout extends FrameLayout {
     public void addView(View child) {
         super.addView(child);
         if (child instanceof StickerView) {
+            refreshChildState();
             mStickerViewList.add((StickerView) child);
         }
     }
@@ -44,46 +46,29 @@ public class StickerLayout extends FrameLayout {
         int x = (int) event.getX();
         int y = (int) event.getY();
 
-        switch (event.getAction()){
+        switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 for (StickerView stickerView : mStickerViewList) {
                     if (stickerView.isOnPic(x, y)) {
-                        mSelectedStickerView = stickerView;
-                        //使得被点击到的StickerView放到最顶层
-                        mStickerViewList.remove(mSelectedStickerView);
-                        mStickerViewList.addLast(mSelectedStickerView);
+                        removeView(stickerView);
+                        super.addView(stickerView);
                         break;
                     }
                 }
-                removeAllViews();
-                int count = mStickerViewList.size();
-                for (int i = 0; i < count; i++) {
-                    StickerView stickerView = mStickerViewList.get(i);
-                    stickerView.setSelectState(false);
-                    super.addView(stickerView);
-                }
+                refreshChildState();
                 break;
         }
-
-
-//        ListIterator<StickerView> iterator = mStickerViewList.listIterator();
-//        while (iterator.hasNext()){
-//            StickerView stickerView = iterator.next();
-//            if (stickerView.isOnPic(x, y)) {
-//                mSelectedStickerView = stickerView;
-//                //使得被点击到的StickerView放到最顶层
-//                iterator.remove();
-//                break;
-//            }
-//        }
-
-
-
-
-
-//        for (StickerView view : mStickerViewList) {
-//            addView(view);
-//        }
         return super.onInterceptTouchEvent(event);
+    }
+
+    /**
+     * 刷新所有StickerView的状态，主要是边框的显示刷新
+     */
+    private void refreshChildState() {
+        int count = mStickerViewList.size();
+        for (int i = 0; i < count; i++) {
+            StickerView stickerView = mStickerViewList.get(i);
+            stickerView.setSelectState(false);
+        }
     }
 }

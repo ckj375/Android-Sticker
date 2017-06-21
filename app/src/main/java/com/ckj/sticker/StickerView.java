@@ -462,5 +462,6 @@ public class StickerView extends View {
 
     public void setSelectState(boolean unselect){
         this.isSelected = unselect;
+        invalidate();
     }
 }  

@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.DisplayMetrics;
@@ -44,11 +45,12 @@ public class MainActivity extends Activity {
         // 贴图容器
         container = (StickerLayout) findViewById(R.id.layout_sticker);
       //  img = (ImageView) findViewById(R.id.src);
-        src = BitmapFactory.decodeResource(this.getResources(), R.drawable.bg);
+        container.setBackgroundResource(R.drawable.bg);
+        src = BitmapFactory.decodeResource(getResources(),R.drawable.bg);
      //   img.setImageBitmap(src);
 
         // 素材集合
-        materialList = new ArrayList<StickerView>();
+        materialList = new ArrayList<>();
 
         // 跳转至素材界面
         decorateType = (TextView) findViewById(R.id.type_decorate);
