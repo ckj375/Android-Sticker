@@ -9,9 +9,13 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.support.annotation.Nullable;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import java.util.ArrayList;
 
 
 /**
@@ -21,22 +25,14 @@ public class StickerView extends View {
 
     private Context context;
     private String imgPath;
-    private Bitmap mainBmp, deleteBmp, controlBmp;
-    private int mainBmpWidth, mainBmpHeight, deleteBmpWidth, deleteBmpHeight, controlBmpWidth, controlBmpHeight;
-    int resultWidth = mainBmpWidth + deleteBmpWidth / 2 + controlBmpWidth / 2;;
-    int resultHeight = mainBmpHeight + deleteBmpHeight / 2 + controlBmpHeight / 2;;
 
-    private float[] srcPs, dstPs;
-    private Matrix matrix;
+//    int resultWidth = mainBmpWidth + deleteBmpWidth / 2 + controlBmpWidth / 2;;
+//    int resultHeight = mainBmpHeight + deleteBmpHeight / 2 + controlBmpHeight / 2;;
+
+    //   private float[] srcPs, dstPs;
+
     private Paint paint, paintFrame;
-    private float deltaX = 0, deltaY = 0;   // 位移值
-    private float scaleValue = 1;           // 贴图素材缩放值
-    private Point lastPoint;
-    private Point prePivot, lastPivot;
-    private float defaultDegree, preDegree, lastDegree;
-    private Point symmetricPoint = new Point();    //当前操作点对称点
-    private Point centerPoint = new Point();       //中心点
-    private Point rightBottomPoint = new Point();  //旋转缩放点
+
 
     /**
      * 图片操作类型
@@ -46,10 +42,7 @@ public class StickerView extends View {
     public static final int OPER_SCALE = 1;         //缩放  
     public static final int OPER_ROTATE = 2;        //旋转  
     public static final int OPER_SELECTED = 3;      //选择  
-    public int lastOper = OPER_SELECTED;
 
-    private boolean isSelected = true;              // 是否选中
-    private boolean isActive = true;               // 是否删除
 
     /* 图片控制点 
      * 0--------1
@@ -64,47 +57,70 @@ public class StickerView extends View {
     public static final int CTR_MID_MID = 4;
     public int current_ctr = CTR_NONE;
 
-    private boolean unselect;
+    private ArrayList<StickerModel> mStickerViewArrayList = new ArrayList<>();
 
-    public StickerView(Context context, String imgPath) {
+    public void setStickerViewArrayList(ArrayList<StickerModel> stickerViewArrayList) {
+        mStickerViewArrayList = stickerViewArrayList;
+    }
+
+//    public StickerView(Context context, String imgPath) {
+//        super(context);
+//        this.context = context;
+//        this.imgPath = imgPath;
+//        initData(imgPath);
+//    }
+
+    public StickerView(Context context) {
         super(context);
         this.context = context;
-        this.imgPath = imgPath;
-        initData(imgPath);
+        initData();
     }
+
+    public StickerView(Context context, @Nullable AttributeSet attrs) {
+        super(context, attrs);
+        this.context = context;
+        initData();
+    }
+
+    public StickerView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        this.context = context;
+        initData();
+    }
+
+    public void addStickerView(StickerModel stickerModel) {
+        stickerModel.setSrcPs(new float[]{
+                0, 0,
+                stickerModel.getMainBmpWidth(), 0,
+                stickerModel.getMainBmpWidth(), stickerModel.getMainBmpHeight(),
+                0, stickerModel.getMainBmpHeight(),
+                stickerModel.getMainBmpWidth() / 2, stickerModel.getMainBmpHeight() / 2
+        });
+
+
+        // 平移后中心点位置
+        stickerModel.setPrePivot(new Point(stickerModel.getMainBmpWidth() / 2, stickerModel.getMainBmpHeight() / 2));
+        // 平移前中心点位置
+        stickerModel.setLastPivot(new Point(stickerModel.getMainBmpWidth() / 2, stickerModel.getMainBmpHeight() / 2));
+
+        // 上一次触摸点位置
+        stickerModel.setLastPoint(new Point(0, 0));
+
+        stickerModel.setDefaultDegree(computeDegree(new Point(stickerModel.getMainBmpWidth(), stickerModel.getMainBmpHeight())
+                , new Point(stickerModel.getMainBmpWidth() / 2, stickerModel.getMainBmpHeight() / 2)));
+        stickerModel.setLastDegree(computeDegree(new Point(stickerModel.getMainBmpWidth(), stickerModel.getMainBmpHeight())
+                , new Point(stickerModel.getMainBmpWidth() / 2, stickerModel.getMainBmpHeight() / 2)));
+
+        setMatrix(OPER_DEFAULT, stickerModel);
+        mStickerViewArrayList.add(stickerModel);
+        invalidate();
+    }
+
 
     /**
      * 初始化数据
      */
-    private void initData(String imgPath) {
-        mainBmp = BitmapFactory.decodeFile(imgPath);
-        deleteBmp = BitmapFactory.decodeResource(this.context.getResources(), R.drawable.ic_f_delete_normal);
-        controlBmp = BitmapFactory.decodeResource(this.context.getResources(), R.drawable.ic_f_rotate_normal);
-        mainBmpWidth = mainBmp.getWidth();
-        mainBmpHeight = mainBmp.getHeight();
-        deleteBmpWidth = deleteBmp.getWidth();
-        deleteBmpHeight = deleteBmp.getHeight();
-        controlBmpWidth = controlBmp.getWidth();
-        controlBmpHeight = controlBmp.getHeight();
-
-        srcPs = new float[]{
-                0, 0,
-                mainBmpWidth, 0,
-                mainBmpWidth, mainBmpHeight,
-                0, mainBmpHeight,
-                mainBmpWidth / 2, mainBmpHeight / 2
-        };
-        dstPs = srcPs.clone();
-
-        matrix = new Matrix();
-
-        // 平移后中心点位置
-        prePivot = new Point(mainBmpWidth / 2, mainBmpHeight / 2);
-        // 平移前中心点位置
-        lastPivot = new Point(mainBmpWidth / 2, mainBmpHeight / 2);
-
-        // 上一次触摸点位置
-        lastPoint = new Point(0, 0);
+    private void initData() {
 
         paint = new Paint();
         paint.setAntiAlias(true);
@@ -113,39 +129,51 @@ public class StickerView extends View {
         paintFrame.setColor(Color.WHITE);
         paintFrame.setAntiAlias(true);
 
-        defaultDegree = lastDegree = computeDegree(new Point(mainBmpWidth, mainBmpHeight), new Point(mainBmpWidth / 2, mainBmpHeight / 2));
 
-        setMatrix(OPER_DEFAULT);
+
+//        mainBmp = BitmapFactory.decodeFile(imgPath);
+//        deleteBmp = BitmapFactory.decodeResource(this.context.getResources(), R.drawable.ic_f_delete_normal);
+//        controlBmp = BitmapFactory.decodeResource(this.context.getResources(), R.drawable.ic_f_rotate_normal);
+//        mainBmpWidth = mainBmp.getWidth();
+//        mainBmpHeight = mainBmp.getHeight();
+//        deleteBmpWidth = deleteBmp.getWidth();
+//        deleteBmpHeight = deleteBmp.getHeight();
+//        controlBmpWidth = controlBmp.getWidth();
+//        controlBmpHeight = controlBmp.getHeight();
+
+
     }
 
     /**
      * 矩阵变换，达到图形平移的目的
      */
-    private void setMatrix(int operationType) {
+    private void setMatrix(int operationType, StickerModel stickerModel) {
+        float[] dstPs = stickerModel.getDstPs();
         switch (operationType) {
             case OPER_TRANSLATE:
-                matrix.postTranslate(deltaX, deltaY);
+                stickerModel.getMatrix().postTranslate(stickerModel.getDeltaX(), stickerModel.getDeltaY());
                 break;
             case OPER_SCALE:
-                matrix.postScale(scaleValue, scaleValue, dstPs[CTR_MID_MID * 2], dstPs[CTR_MID_MID * 2 + 1]);
+                stickerModel.getMatrix().postScale(stickerModel.getScaleValue(), stickerModel.getScaleValue()
+                        , dstPs[CTR_MID_MID * 2], dstPs[CTR_MID_MID * 2 + 1]);
                 break;
             case OPER_ROTATE:
-                matrix.postRotate(preDegree - lastDegree, dstPs[CTR_MID_MID * 2], dstPs[CTR_MID_MID * 2 + 1]);
+                stickerModel.getMatrix().postRotate(stickerModel.getPreDegree() - stickerModel.getLastDegree()
+                        , dstPs[CTR_MID_MID * 2], dstPs[CTR_MID_MID * 2 + 1]);
                 break;
         }
-
-        matrix.mapPoints(dstPs, srcPs);
+        stickerModel.getMatrix().mapPoints(dstPs, stickerModel.getSrcPs());
     }
 
     // 判断触摸点是否在贴图上
-    public boolean isOnPic(int x, int y) {
+    public boolean isOnPic(int x, int y, StickerModel stickerModel) {
         // 获取逆向矩阵
         Matrix inMatrix = new Matrix();
-        matrix.invert(inMatrix);
+        stickerModel.getMatrix().invert(inMatrix);
 
         float[] tempPs = new float[]{0, 0};
         inMatrix.mapPoints(tempPs, new float[]{x, y});
-        if (tempPs[0] > 0 && tempPs[0] < mainBmp.getWidth() && tempPs[1] > 0 && tempPs[1] < mainBmp.getHeight()) {
+        if (tempPs[0] > 0 && tempPs[0] < stickerModel.getMainBmp().getWidth() && tempPs[1] > 0 && tempPs[1] < stickerModel.getMainBmp().getHeight()) {
             return true;
         } else {
             return false;
@@ -155,13 +183,15 @@ public class StickerView extends View {
     /**
      * 判断点所在的控制点
      *
-     * @param evX
-     * @param evY
+     * @param
+     * @param
      * @return
      */
-    private int isOnCP(int evx, int evy) {
-        Rect rect = new Rect(evx - controlBmpWidth / 2, evy - controlBmpHeight / 2, evx + controlBmpWidth / 2, evy + controlBmpHeight / 2);
+    private int isOnCP(int evx, int evy, StickerModel stickerModel) {
+        Rect rect = new Rect(evx - stickerModel.getControlBmpWidth() / 2, evy - stickerModel.getControlBmpHeight() / 2
+                , evx + stickerModel.getControlBmpWidth() / 2, evy + stickerModel.getControlBmpHeight() / 2);
         int res = 0;
+        float[] dstPs = stickerModel.getDstPs();
         for (int i = 0; i < dstPs.length; i += 2) {
             if (rect.contains((int) dstPs[i], (int) dstPs[i + 1])) {
                 return res;
@@ -176,54 +206,50 @@ public class StickerView extends View {
         int evX = (int) event.getX();
         int evY = (int) event.getY();
 
-        if (!isOnPic(evX, evY) && isOnCP(evX, evY) == CTR_NONE) {
-            isSelected = false;
-        //    requestLayout();
-            invalidate();//重绘
-        } else if (isOnCP(evX, evY) == CTR_LEFT_TOP) {
-            isActive = false;
-        //    requestLayout();
-            invalidate();//重绘
-        } else {
-            int operType = OPER_DEFAULT;
-            operType = getOperationType(event);
+        for (StickerModel stickerModel : mStickerViewArrayList) {
+            if (!isOnPic(evX, evY, stickerModel) && isOnCP(evX, evY, stickerModel) == CTR_NONE) {
+                stickerModel.setSelected(false);
+                //    requestLayout();
+            } else if (isOnCP(evX, evY, stickerModel) == CTR_LEFT_TOP) {
+                stickerModel.setActive(false);
+                //    requestLayout();
+            } else {
+                int operType = OPER_DEFAULT;
+                operType = getOperationType(event, stickerModel);
 
-            switch (operType) {
-                case OPER_TRANSLATE:
-                    if (isOnPic(evX, evY)) {
-                        translate(evX, evY);
-                    }
-                    break;
-                case OPER_ROTATE:
-                    rotate(event);
-                    scale(event);
-                    break;
+                switch (operType) {
+                    case OPER_TRANSLATE:
+                        if (isOnPic(evX, evY, stickerModel)) {
+                            translate(evX, evY, stickerModel);
+                        }
+                        break;
+                    case OPER_ROTATE:
+                        rotate(event, stickerModel);
+                        scale(event, stickerModel);
+                        break;
+                }
+
+                stickerModel.getLastPoint().x = evX;
+                stickerModel.getLastPoint().y = evY;
+
+                stickerModel.setLastOper(operType);
+                stickerModel.setSelected(true);
+                //   requestLayout();
             }
-
-            lastPoint.x = evX;
-            lastPoint.y = evY;
-
-            lastOper = operType;
-            isSelected = true;
-         //   requestLayout();
-            invalidate();//重绘
         }
+        invalidate();//重绘
         return true;
     }
 
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 
-    }
-
-    private int getOperationType(MotionEvent event) {
+    private int getOperationType(MotionEvent event, StickerModel stickerModel) {
         int evX = (int) event.getX();
         int evY = (int) event.getY();
-        int curOper = lastOper;
+        int curOper = stickerModel.getLastOper();
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                current_ctr = isOnCP(evX, evY);
-                if (current_ctr != CTR_NONE || isOnPic(evX, evY)) {
+                current_ctr = isOnCP(evX, evY, stickerModel);
+                if (current_ctr != CTR_NONE || isOnPic(evX, evY, stickerModel)) {
                     curOper = OPER_SELECTED;
                 }
                 break;
@@ -232,7 +258,7 @@ public class StickerView extends View {
                     // 删除饰品
                 } else if (current_ctr == CTR_RIGHT_BOTTOM) {
                     curOper = OPER_ROTATE;
-                } else if (lastOper == OPER_SELECTED) {
+                } else if (stickerModel.getLastOper() == OPER_SELECTED) {
                     curOper = OPER_TRANSLATE;
                 }
                 break;
@@ -245,7 +271,6 @@ public class StickerView extends View {
         return curOper;
 
     }
-
 
 
 //    @Override
@@ -280,17 +305,15 @@ public class StickerView extends View {
      * @param evx
      * @param evy
      */
-    private void translate(int evx, int evy) {
-        deltaX = evx - lastPoint.x;
-        deltaY = evy - lastPoint.y;
+    private void translate(int evx, int evy, StickerModel stickerModel) {
+        stickerModel.setDeltaX(evx - stickerModel.getLastPoint().x);
+        stickerModel.setDeltaY(evy - stickerModel.getLastPoint().y);
+        stickerModel.getPrePivot().x += stickerModel.getDeltaX();
+        stickerModel.getPrePivot().y += stickerModel.getDeltaY();
+        stickerModel.getLastPivot().x = stickerModel.getPrePivot().x;
+        stickerModel.getLastPivot().y = stickerModel.getPrePivot().y;
 
-        prePivot.x += deltaX;
-        prePivot.y += deltaY;
-
-        lastPivot.x = prePivot.x;
-        lastPivot.y = prePivot.y;
-
-        setMatrix(OPER_TRANSLATE); //设置矩阵
+        setMatrix(OPER_TRANSLATE, stickerModel); //设置矩阵
     }
 
     /**
@@ -301,11 +324,11 @@ public class StickerView extends View {
      * |       |
      * 6---5---4
      *
-     * @param evX
-     * @param evY
+     * @param
+     * @param
      */
-    private void scale(MotionEvent event) {
-
+    private void scale(MotionEvent event, StickerModel stickerModel) {
+        float[] dstPs = stickerModel.getDstPs();
         int pointIndex = current_ctr * 2;
 
         float px = dstPs[pointIndex];
@@ -323,19 +346,19 @@ public class StickerView extends View {
         float temp1 = getDistanceOfTwoPoints(px, py, oppositeX, oppositeY);
         float temp2 = getDistanceOfTwoPoints(evx, evy, oppositeX, oppositeY);
 
-        this.scaleValue = temp2 / temp1;
-        symmetricPoint.x = (int) oppositeX;
-        symmetricPoint.y = (int) oppositeY;
-        centerPoint.x = (int) (symmetricPoint.x + px) / 2;
-        centerPoint.y = (int) (symmetricPoint.y + py) / 2;
-        rightBottomPoint.x = (int) dstPs[8];
-        rightBottomPoint.y = (int) dstPs[9];
-        Log.i("img", "scaleValue is " + scaleValue);
-        if (getScaleValue() < (float) 0.3 && scaleValue < (float) 1) {
-            // 限定最小缩放比为0.3
-        } else {
-            setMatrix(OPER_SCALE);
-        }
+        stickerModel.setScaleValue(temp2 / temp1);
+        stickerModel.getSymmetricPoint().x = (int) oppositeX;
+        stickerModel.getSymmetricPoint().y = (int) oppositeY;
+        stickerModel.getCenterPoint().x = (int) (stickerModel.getSymmetricPoint().x + px) / 2;
+        stickerModel.getCenterPoint().y = (int) (stickerModel.getSymmetricPoint().y + py) / 2;
+        stickerModel.getRightBottomPoint().x = (int) dstPs[8];
+        stickerModel.getRightBottomPoint().y = (int) dstPs[9];
+        Log.i("img", "scaleValue is " + stickerModel.getScaleValue());
+        //  if (getScaleValue() < (float) 0.3 && stickerModel.getScaleValue() < (float) 1) {
+        // 限定最小缩放比为0.3
+        //   } else {
+        setMatrix(OPER_SCALE, stickerModel);
+        //  }
     }
 
     /**
@@ -346,18 +369,20 @@ public class StickerView extends View {
      * |       |
      * 6---5---4
      *
-     * @param evX
-     * @param evY
+     * @param
+     * @param
      */
-    private void rotate(MotionEvent event) {
-
+    private void rotate(MotionEvent event, StickerModel stickerModel) {
+        float[] dstPs = stickerModel.getDstPs();
         if (event.getPointerCount() == 2) {
-            preDegree = computeDegree(new Point((int) event.getX(0), (int) event.getY(0)), new Point((int) event.getX(1), (int) event.getY(1)));
+            stickerModel.setPreDegree(computeDegree(new Point((int) event.getX(0), (int) event.getY(0))
+                    , new Point((int) event.getX(1), (int) event.getY(1))));
         } else {
-            preDegree = computeDegree(new Point((int) event.getX(), (int) event.getY()), new Point((int) dstPs[8], (int) dstPs[9]));
+            stickerModel.setPreDegree(computeDegree(new Point((int) event.getX(), (int) event.getY())
+                    , new Point((int) dstPs[8], (int) dstPs[9])));
         }
-        setMatrix(OPER_ROTATE);
-        lastDegree = preDegree;
+        setMatrix(OPER_ROTATE, stickerModel);
+        stickerModel.setLastDegree(stickerModel.getPreDegree());
     }
 
 
@@ -405,54 +430,59 @@ public class StickerView extends View {
 
     @Override
     public void onDraw(Canvas canvas) {
-        if (!isActive) {
-            return;
+        for (StickerModel stickerModel : mStickerViewArrayList) {
+            if (!stickerModel.isActive()) {
+                return;
+            }
+            canvas.drawBitmap(stickerModel.getMainBmp(), stickerModel.getMatrix(), paint);//绘制主图片
+            if (stickerModel.isSelected()) {
+                drawFrame(canvas, stickerModel);//绘制边框,以便测试点的映射
+                drawControlPoints(canvas, stickerModel);//绘制控制点图片
+            }
         }
-        canvas.drawBitmap(mainBmp, matrix, paint);//绘制主图片
-        if (isSelected) {
-            drawFrame(canvas);//绘制边框,以便测试点的映射
-            drawControlPoints(canvas);//绘制控制点图片
-        }
-
     }
 
-    private void drawFrame(Canvas canvas) {
+    private void drawFrame(Canvas canvas, StickerModel stickerModel) {
+        float[] dstPs = stickerModel.getDstPs();
         canvas.drawLine(dstPs[0], dstPs[1], dstPs[2], dstPs[3], paintFrame);
         canvas.drawLine(dstPs[2], dstPs[3], dstPs[4], dstPs[5], paintFrame);
         canvas.drawLine(dstPs[4], dstPs[5], dstPs[6], dstPs[7], paintFrame);
         canvas.drawLine(dstPs[0], dstPs[1], dstPs[6], dstPs[7], paintFrame);
     }
 
-    private void drawControlPoints(Canvas canvas) {
-        canvas.drawBitmap(deleteBmp, dstPs[0] - deleteBmpWidth / 2, dstPs[1] - deleteBmpHeight / 2, paint);
-        canvas.drawBitmap(controlBmp, dstPs[4] - controlBmpWidth / 2, dstPs[5] - controlBmpHeight / 2, paint);
+    private void drawControlPoints(Canvas canvas, StickerModel stickerModel) {
+        float[] dstPs = stickerModel.getDstPs();
+        canvas.drawBitmap(stickerModel.getDeleteBmp(), dstPs[0] - stickerModel.getDeleteBmpWidth() / 2
+                , dstPs[1] - stickerModel.getDeleteBmpHeight() / 2, paint);
+        canvas.drawBitmap(stickerModel.getControlBmp(), dstPs[4] - stickerModel.getControlBmpWidth() / 2
+                , dstPs[5] - stickerModel.getControlBmpHeight() / 2, paint);
     }
 
-    // 获取饰品旋转角度
-    public float getDegree() {
-        return lastDegree - defaultDegree;
-    }
+//    // 获取饰品旋转角度
+//    public float getDegree() {
+//        return lastDegree - defaultDegree;
+//    }
 
     // 获取饰品中心点坐标
-    public float[] getCenterPoint() {
-        float[] centerPoint = new float[2];
-        centerPoint[0] = dstPs[8];
-        centerPoint[1] = dstPs[9];
-        return centerPoint;
-    }
+//    public float[] getCenterPoint() {
+//        float[] centerPoint = new float[2];
+//        centerPoint[0] = dstPs[8];
+//        centerPoint[1] = dstPs[9];
+//        return centerPoint;
+//    }
+//
+//    // 获取饰品缩放比例(与原图相比)
+//    public float getScaleValue() {
+//        float preDistance = (srcPs[8] - srcPs[0]) * (srcPs[8] - srcPs[0]) + (srcPs[9] - srcPs[1]) * (srcPs[9] - srcPs[1]);
+//        float lastDistance = (dstPs[8] - dstPs[0]) * (dstPs[8] - dstPs[0]) + (dstPs[9] - dstPs[1]) * (dstPs[9] - dstPs[1]);
+//        float scaleValue = (float) Math.sqrt(lastDistance / preDistance);
+//        return scaleValue;
+//    }
 
-    // 获取饰品缩放比例(与原图相比)
-    public float getScaleValue() {
-        float preDistance = (srcPs[8] - srcPs[0]) * (srcPs[8] - srcPs[0]) + (srcPs[9] - srcPs[1]) * (srcPs[9] - srcPs[1]);
-        float lastDistance = (dstPs[8] - dstPs[0]) * (dstPs[8] - dstPs[0]) + (dstPs[9] - dstPs[1]) * (dstPs[9] - dstPs[1]);
-        float scaleValue = (float) Math.sqrt(lastDistance / preDistance);
-        return scaleValue;
-    }
-
-    // 判断饰品是否已被移除
-    public boolean getIsActive() {
-        return isActive;
-    }
+//    // 判断饰品是否已被移除
+//    public boolean getIsActive() {
+//        return isActive;
+//    }
 
 
     // 获取素材图片路径
@@ -460,8 +490,8 @@ public class StickerView extends View {
         return imgPath;
     }
 
-    public void setSelectState(boolean unselect){
-        this.isSelected = unselect;
-        invalidate();
-    }
+//    public void setSelectState(boolean unselect){
+//        this.isSelected = unselect;
+//        invalidate();
+//    }
 }  

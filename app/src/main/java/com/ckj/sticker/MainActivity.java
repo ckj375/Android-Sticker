@@ -28,7 +28,7 @@ import java.util.Date;
 
 public class MainActivity extends Activity {
 
-    private StickerLayout container;
+    //private StickerLayout container;
     private Button saveBtn;
     private ImageView img;
     private Bitmap src;
@@ -37,23 +37,27 @@ public class MainActivity extends Activity {
     // 定义贴图素材集合
     private ArrayList<StickerView> materialList;
 
+    private StickerView mStickerView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         // 贴图容器
-        container = (StickerLayout) findViewById(R.id.layout_sticker);
-      //  img = (ImageView) findViewById(R.id.src);
-        container.setBackgroundResource(R.drawable.bg);
-        src = BitmapFactory.decodeResource(getResources(),R.drawable.bg);
-     //   img.setImageBitmap(src);
+       // container = (StickerLayout) findViewById(R.id.layout_sticker);
+         //img = (ImageView) findViewById(R.id.src);
+      //  container.setBackgroundResource(R.drawable.bg);
+        src = BitmapFactory.decodeResource(getResources(), R.drawable.bg);
+        //   img.setImageBitmap(src);
 
         // 素材集合
         materialList = new ArrayList<>();
 
         // 跳转至素材界面
         decorateType = (TextView) findViewById(R.id.type_decorate);
+
+        mStickerView = (StickerView) findViewById(R.id.layout_sticker);
         decorateType.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -62,27 +66,11 @@ public class MainActivity extends Activity {
                 startActivityForResult(i, REQUEST_FOR_PICTURE);
                 overridePendingTransition(R.anim.push_up, 0);
 
-                /*
-                for(CommonImgEffectView effectView:materialList){
-                    if(!effectView.getIsActive()){
-                        materialList.remove(effectView);
-                    }
-                }
-                */
 
             }
         });
 
-//        // 跳转至素材界面
-//        modeType = (TextView) findViewById(R.id.type_mode);
-//        modeType.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Intent i = new Intent();
-//                i.setClass(MainActivity.this,MaterialActivity.class);
-//                startActivityForResult(i,REQUEST_FOR_PICTURE);
-//            }
-//        });
+//
 
         // 保存图片
         saveBtn = (Button) findViewById(R.id.save);
@@ -90,13 +78,13 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 Bitmap tempBmp = Bitmap.createBitmap(src);
-                for (StickerView effectView : materialList) {
-                    if (effectView.getIsActive()) {
-                        tempBmp = createBitmap(tempBmp,
-                                BitmapFactory.decodeFile(effectView.getImgPath()),
-                                effectView.getCenterPoint(), effectView.getDegree(), effectView.getScaleValue());
-                    }
-                }
+//                for (StickerView effectView : materialList) {
+//                    if (effectView.getIsActive()) {
+//                        tempBmp = createBitmap(tempBmp,
+//                                BitmapFactory.decodeFile(effectView.getImgPath()),
+//                                effectView.getCenterPoint(), effectView.getDegree(), effectView.getScaleValue());
+//                    }
+//                }
 
                 saveMyBitmap(tempBmp);
             }
@@ -115,15 +103,20 @@ public class MainActivity extends Activity {
 //            int centerY = (img.getTop() + img.getBottom()) / 2;
 //            Log.v("ckjc", "centerX=" + centerX + "  centerY=" + centerY);
 
-            StickerView view = new StickerView(MainActivity.this, imgPath);
-
-            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
-                    RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-            params.addRule(RelativeLayout.CENTER_IN_PARENT);
-            view.setLayoutParams(params);
-            container.addView(view);
-            // 添加至素材集合
-            materialList.add(view);
+//            StickerView view = new StickerView(MainActivity.this, imgPath);
+//
+//            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
+//                    RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+//            params.addRule(RelativeLayout.CENTER_IN_PARENT);
+//            view.setLayoutParams(params);
+//            container.addView(view);
+//            // 添加至素材集合
+//            materialList.add(view);
+            Bitmap mainBmp = BitmapFactory.decodeFile(imgPath);
+            Bitmap deleteBmp = BitmapFactory.decodeResource(getResources(), R.drawable.ic_f_delete_normal);
+            Bitmap controlBmp = BitmapFactory.decodeResource(getResources(), R.drawable.ic_f_rotate_normal);
+            StickerModel stickerModel = new StickerModel(mainBmp,deleteBmp,controlBmp);
+            mStickerView.addStickerView(stickerModel);
         }
     }
 
@@ -192,7 +185,7 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
-        Toast.makeText(MainActivity.this, "已保存:"+f.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(MainActivity.this, "已保存:" + f.getAbsolutePath(), Toast.LENGTH_SHORT).show();
     }
 
 }
