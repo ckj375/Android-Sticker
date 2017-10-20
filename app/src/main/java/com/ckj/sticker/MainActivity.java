@@ -33,8 +33,6 @@ public class MainActivity extends Activity {
     private Bitmap src;
     private TextView decorateType;
     private static final int REQUEST_FOR_PICTURE = 1;
-    // 定义贴图素材集合
-    private LinkedList<StickerView> materialList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,9 +44,6 @@ public class MainActivity extends Activity {
         img = (ImageView) findViewById(R.id.src);
         src = BitmapFactory.decodeResource(this.getResources(), R.drawable.bg);
         img.setImageBitmap(src);
-
-        // 素材集合
-        materialList = new LinkedList<>();
 
         // 跳转至素材界面
         decorateType = (TextView) findViewById(R.id.type_decorate);
@@ -71,29 +66,19 @@ public class MainActivity extends Activity {
             }
         });
 
-//        // 跳转至素材界面
-//        modeType = (TextView) findViewById(R.id.type_mode);
-//        modeType.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Intent i = new Intent();
-//                i.setClass(MainActivity.this,MaterialActivity.class);
-//                startActivityForResult(i,REQUEST_FOR_PICTURE);
-//            }
-//        });
-
         // 保存图片
         saveBtn = (Button) findViewById(R.id.save);
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                materialList = mStickerLayout.getStickerViewList();
                 Bitmap tempBmp = Bitmap.createBitmap(src);
+                LinkedList<StickerView> materialList = mStickerLayout.getStickerViewList();
                 for (StickerView effectView : materialList) {
                     if (effectView.getIsActive()) {
                         tempBmp = createBitmap(tempBmp,
                                 BitmapFactory.decodeFile(effectView.getImgPath()),
                                 effectView.getCenterPoint(), effectView.getDegree(), effectView.getScaleValue());
+                        Log.v("ckjc","effectView.getScaleValue()="+effectView.getScaleValue());
                     }
                 }
 
@@ -135,12 +120,14 @@ public class MainActivity extends Activity {
         getWindowManager().getDefaultDisplay().getMetrics(metric);
         int width = metric.widthPixels;     // 屏幕宽度（像素）
         float scale = (float) w / (float) width;
+        Log.v("ckjc", "w=" + w + " h=" + h + " width=" + width + " scale=" + scale);
 
-        int ww = dst.getWidth();
-        int wh = dst.getHeight();
-
-        float Ltx = centerPoint[0] - img.getLeft() - ww * scaleValue / 2;
-        float Lty = centerPoint[1] - img.getTop() - wh * scaleValue / 2;
+        // 素材宽高(像素)
+        int dstWidth = dst.getWidth();
+        int dstHeight = dst.getHeight();
+        float Ltx = centerPoint[0] - img.getLeft() - dstWidth * scaleValue / 2;
+        float Lty = centerPoint[1] - img.getTop() - dstHeight * scaleValue / 2;
+        Log.v("ckjc", "dstWidth=" + dstWidth + " dstHeight=" + dstHeight + " scaleValue=" + scaleValue + " Ltx=" + Ltx + " Lty=" + Lty);
 
         Bitmap newb = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);//创建一个新的和SRC长度宽度一样的位图
         Canvas cv = new Canvas(newb);

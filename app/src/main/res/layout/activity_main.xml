@@ -37,21 +37,23 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_marginBottom="48dp"
         android:layout_marginTop="48dp"
-        android:scrollbars="horizontal">
+        android:scrollbars="horizontal"
+        android:background="#DCDCDC">
 
         <ImageView
             android:id="@+id/src"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
             android:src="@drawable/bg" />
 
         <com.ckj.sticker.StickerViewLayout
             android:id="@+id/sticker_layout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="match_parent" />
     </RelativeLayout>
 
 
