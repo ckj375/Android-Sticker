@@ -22,19 +22,19 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 
 public class MainActivity extends Activity {
 
-    private RelativeLayout container;
+    private StickerViewLayout mStickerLayout;
     private Button saveBtn;
     private ImageView img;
     private Bitmap src;
     private TextView decorateType;
     private static final int REQUEST_FOR_PICTURE = 1;
     // 定义贴图素材集合
-    private ArrayList<StickerView> materialList;
+    private LinkedList<StickerView> materialList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,13 +42,13 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         // 贴图容器
-        container = (RelativeLayout) findViewById(R.id.container);
+        mStickerLayout = (StickerViewLayout) findViewById(R.id.sticker_layout);
         img = (ImageView) findViewById(R.id.src);
         src = BitmapFactory.decodeResource(this.getResources(), R.drawable.bg);
         img.setImageBitmap(src);
 
         // 素材集合
-        materialList = new ArrayList<StickerView>();
+        materialList = new LinkedList<>();
 
         // 跳转至素材界面
         decorateType = (TextView) findViewById(R.id.type_decorate);
@@ -87,6 +87,7 @@ public class MainActivity extends Activity {
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                materialList = mStickerLayout.getStickerViewList();
                 Bitmap tempBmp = Bitmap.createBitmap(src);
                 for (StickerView effectView : materialList) {
                     if (effectView.getIsActive()) {
@@ -119,10 +120,7 @@ public class MainActivity extends Activity {
                     RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
             params.addRule(RelativeLayout.CENTER_IN_PARENT);
             view.setLayoutParams(params);
-            container.addView(view);
-            // 添加至素材集合
-            materialList.add(view);
-
+            mStickerLayout.addView(view);
         }
     }
 

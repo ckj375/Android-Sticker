@@ -62,6 +62,20 @@ public class StickerView extends View {
     public static final int CTR_MID_MID = 4;
     public int current_ctr = CTR_NONE;
 
+
+    /**
+     * 素材选中监听器
+     */
+    public interface OnSelectedListener {
+        void onselected();
+    }
+
+    public OnSelectedListener mOnSelectedListener = null;
+
+    public void setOnSelectedListener(OnSelectedListener listener) {
+        this.mOnSelectedListener = listener;
+    }
+
     public StickerView(Context context, String imgPath) {
         super(context);
         this.context = context;
@@ -206,10 +220,15 @@ public class StickerView extends View {
         if (!isOnPic(evX, evY) && isOnCP(evX, evY) == CTR_NONE) {
             isSelected = false;
             invalidate();//重绘
+            return false;
         } else if (isOnCP(evX, evY) == CTR_LEFT_TOP) {
             isActive = false;
             invalidate();//重绘
         } else {
+            mOnSelectedListener.onselected();
+            bringToFront();
+            requestLayout();
+
             int operType = OPER_DEFAULT;
             operType = getOperationType(event);
 
@@ -420,5 +439,9 @@ public class StickerView extends View {
     // 获取素材图片路径
     public String getImgPath() {
         return imgPath;
+    }
+
+    public boolean getIsSelected() {
+        return isSelected;
     }
 }  
