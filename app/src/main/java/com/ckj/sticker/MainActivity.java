@@ -120,29 +120,27 @@ public class MainActivity extends Activity {
         getWindowManager().getDefaultDisplay().getMetrics(metric);
         int width = metric.widthPixels;     // 屏幕宽度（像素）
         float scale = (float) w / (float) width;
-        Log.v("ckjc", "w=" + w + " h=" + h + " width=" + width + " scale=" + scale);
 
-        // 素材宽高(像素)
+        // 素材原始宽高(像素)
         int dstWidth = dst.getWidth();
         int dstHeight = dst.getHeight();
-        float Ltx = centerPoint[0] - img.getLeft() - dstWidth * scaleValue / 2;
-        float Lty = centerPoint[1] - img.getTop() - dstHeight * scaleValue / 2;
-        Log.v("ckjc", "dstWidth=" + dstWidth + " dstHeight=" + dstHeight + " scaleValue=" + scaleValue + " Ltx=" + Ltx + " Lty=" + Lty);
+
+        // 定义矩阵对象
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleValue * scale, scaleValue * scale);
+
+        // 素材起始位置(左上角)
+        float Ltx = (centerPoint[0] - img.getLeft() - dstWidth * scaleValue / 2) * scale;
+        float Lty = (centerPoint[1] - img.getTop() - dstHeight * scaleValue / 2) * scale;
 
         Bitmap newb = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);//创建一个新的和SRC长度宽度一样的位图
         Canvas cv = new Canvas(newb);
         cv.drawBitmap(src, 0, 0, null);//在 0，0坐标开始画入src
-
-        // 定义矩阵对象
-        Matrix matrix = new Matrix();
-        matrix.postScale(scaleValue, scaleValue);
-//        matrix.postRotate(degree);
         cv.save();
-        cv.rotate(degree, centerPoint[0], centerPoint[1]);
+        cv.rotate(degree, centerPoint[0] * scale, centerPoint[1] * scale);
         Bitmap dstbmp = Bitmap.createBitmap(dst, 0, 0, dst.getWidth(), dst.getHeight(),
                 matrix, true);
-        cv.drawBitmap(dstbmp, Ltx * scale, Lty * scale, null);//在src画贴图
-        //cv.save( Canvas.ALL_SAVE_FLAG );//保存
+        cv.drawBitmap(dstbmp, Ltx, Lty, null);//在src画贴图
         cv.restore();//存储
         return newb;
     }
