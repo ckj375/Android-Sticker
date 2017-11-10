@@ -121,6 +121,7 @@ public class StickerView extends View {
 
         paintFrame = new Paint();
         paintFrame.setColor(Color.WHITE);
+        paintFrame.setStrokeWidth(getResources().getDimension(R.dimen.stickerview_frame_width));
         paintFrame.setAntiAlias(true);
 
         defaultDegree = lastDegree = computeDegree(new Point(mainBmpWidth, mainBmpHeight), new Point(mainBmpWidth / 2, mainBmpHeight / 2));

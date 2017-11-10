@@ -6,4 +6,6 @@
 
     <dimen name="gridview_material_width">75dp</dimen>
 
+    <dimen name="stickerview_frame_width">1dp</dimen>
+
 </resources>
