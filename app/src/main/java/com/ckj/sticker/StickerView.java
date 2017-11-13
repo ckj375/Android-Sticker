@@ -64,16 +64,29 @@ public class StickerView extends View {
 
 
     /**
-     * 素材选中监听器
+     * 素材选中监听
      */
     public interface OnSelectedListener {
-        void onselected();
+        void onSelected();
     }
 
     public OnSelectedListener mOnSelectedListener = null;
 
     public void setOnSelectedListener(OnSelectedListener listener) {
         this.mOnSelectedListener = listener;
+    }
+
+    /**
+     * 素材移除监听
+     */
+    public interface OnRemovedListener {
+        void onRemoved();
+    }
+
+    public OnRemovedListener mOnRemovedListener = null;
+
+    public void setOnRemovedListener(OnRemovedListener listener) {
+        this.mOnRemovedListener = listener;
     }
 
     public StickerView(Context context, String imgPath) {
@@ -223,10 +236,11 @@ public class StickerView extends View {
             invalidate();//重绘
             return false;
         } else if (isOnCP(evX, evY) == CTR_LEFT_TOP) {
+            mOnRemovedListener.onRemoved();
             isActive = false;
             invalidate();//重绘
         } else {
-            mOnSelectedListener.onselected();
+            mOnSelectedListener.onSelected();
             bringToFront();
             requestLayout();
 
@@ -431,18 +445,9 @@ public class StickerView extends View {
         return scaleValue;
     }
 
-    // 判断饰品是否已被移除
-    public boolean getIsActive() {
-        return isActive;
-    }
-
-
     // 获取素材图片路径
     public String getImgPath() {
         return imgPath;
     }
 
-    public boolean getIsSelected() {
-        return isSelected;
-    }
 }  

@@ -74,12 +74,10 @@ public class MainActivity extends Activity {
                 Bitmap tempBmp = Bitmap.createBitmap(src);
                 LinkedList<StickerView> materialList = mStickerLayout.getStickerViewList();
                 for (StickerView effectView : materialList) {
-                    if (effectView.getIsActive()) {
-                        tempBmp = createBitmap(tempBmp,
-                                BitmapFactory.decodeFile(effectView.getImgPath()),
-                                effectView.getCenterPoint(), effectView.getDegree(), effectView.getScaleValue());
-                        Log.v("ckjc","effectView.getScaleValue()="+effectView.getScaleValue());
-                    }
+                    tempBmp = createBitmap(tempBmp,
+                            BitmapFactory.decodeFile(effectView.getImgPath()),
+                            effectView.getCenterPoint(), effectView.getDegree(), effectView.getScaleValue());
+                    Log.v("ckjc","effectView.getScaleValue()="+effectView.getScaleValue());
                 }
 
                 saveMyBitmap(tempBmp);

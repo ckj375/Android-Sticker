@@ -26,20 +26,22 @@ public class StickerViewLayout extends FrameLayout {
     }
 
     @Override
-    public void addView(View child) {
+    public void addView(final View child) {
         super.addView(child);
         if (child instanceof StickerView) {
             mStickerViewList.add((StickerView) child);
             ((StickerView) child).setOnSelectedListener(new StickerView.OnSelectedListener() {
                 @Override
-                public void onselected() {
-                    for (StickerView v : mStickerViewList) {
-                        if (v.getIsSelected()) {
-                            mStickerViewList.remove(v);
-                            mStickerViewList.add(v);
-                            break;
-                        }
-                    }
+                public void onSelected() {
+                    mStickerViewList.remove(child);
+                    mStickerViewList.add((StickerView) child);
+                }
+            });
+
+            ((StickerView) child).setOnRemovedListener(new StickerView.OnRemovedListener() {
+                @Override
+                public void onRemoved() {
+                    mStickerViewList.remove(child);
                 }
             });
         }
