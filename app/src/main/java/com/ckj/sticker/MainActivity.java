@@ -27,26 +27,29 @@ import java.util.LinkedList;
 
 public class MainActivity extends Activity {
 
-    private StickerViewLayout mStickerLayout;
+    private static final int REQUEST_FOR_PICTURE = 1;
+
     private Button saveBtn;
     private ImageView img;
-    private Bitmap src;
+    private StickerViewLayout mStickerLayout;
     private TextView decorateType;
-    private static final int REQUEST_FOR_PICTURE = 1;
+
+    private Bitmap src;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 贴图容器
-        mStickerLayout = (StickerViewLayout) findViewById(R.id.sticker_layout);
+        saveBtn = (Button) findViewById(R.id.save);
         img = (ImageView) findViewById(R.id.src);
         src = BitmapFactory.decodeResource(this.getResources(), R.drawable.bg);
         img.setImageBitmap(src);
+        // 贴图容器
+        mStickerLayout = (StickerViewLayout) findViewById(R.id.sticker_layout);
+        decorateType = (TextView) findViewById(R.id.type_decorate);
 
         // 跳转至素材界面
-        decorateType = (TextView) findViewById(R.id.type_decorate);
         decorateType.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -54,25 +57,16 @@ public class MainActivity extends Activity {
                 i.setClass(MainActivity.this, MaterialActivity.class);
                 startActivityForResult(i, REQUEST_FOR_PICTURE);
                 overridePendingTransition(R.anim.push_up, 0);
-
-                /*
-                for(CommonImgEffectView effectView:materialList){
-                    if(!effectView.getIsActive()){
-                        materialList.remove(effectView);
-                    }
-                }
-                */
-
             }
         });
 
         // 保存图片
-        saveBtn = (Button) findViewById(R.id.save);
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Bitmap tempBmp = Bitmap.createBitmap(src);
                 LinkedList<StickerView> materialList = mStickerLayout.getStickerViewList();
+
                 for (StickerView effectView : materialList) {
                     tempBmp = createBitmap(tempBmp,
                             BitmapFactory.decodeFile(effectView.getImgPath()),
@@ -89,7 +83,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        //requestCode标示请求的标示   resultCode表示有数据
         if (requestCode == REQUEST_FOR_PICTURE && resultCode == RESULT_OK) {
             String imgPath = data.getStringExtra(MaterialActivity.MATERIAL_PATH);
             // 贴图容器中心点
