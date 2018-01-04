@@ -9,13 +9,15 @@ import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.orhanobut.logger.AndroidLogAdapter;
+import com.orhanobut.logger.Logger;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,6 +42,8 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Logger.addLogAdapter(new AndroidLogAdapter());
 
         saveBtn = (Button) findViewById(R.id.save);
         img = (ImageView) findViewById(R.id.src);
@@ -71,7 +75,7 @@ public class MainActivity extends Activity {
                     tempBmp = createBitmap(tempBmp,
                             BitmapFactory.decodeFile(effectView.getImgPath()),
                             effectView.getCenterPoint(), effectView.getDegree(), effectView.getScaleValue());
-                    Log.v("ckjc","effectView.getScaleValue()="+effectView.getScaleValue());
+                    Logger.v("effectView.getScaleValue()="+effectView.getScaleValue());
                 }
 
                 saveMyBitmap(tempBmp);
@@ -88,7 +92,7 @@ public class MainActivity extends Activity {
             // 贴图容器中心点
             int centerX = (img.getLeft() + img.getRight()) / 2;
             int centerY = (img.getTop() + img.getBottom()) / 2;
-            Log.v("ckjc", "centerX=" + centerX + "  centerY=" + centerY);
+            Logger.v("centerX=" + centerX + "  centerY=" + centerY);
 
             StickerView view = new StickerView(MainActivity.this, imgPath);
 
