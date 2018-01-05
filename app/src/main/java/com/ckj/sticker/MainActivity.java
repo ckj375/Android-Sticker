@@ -68,14 +68,18 @@ public class MainActivity extends Activity {
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Bitmap tempBmp = Bitmap.createBitmap(src);
                 LinkedList<StickerView> materialList = mStickerLayout.getStickerViewList();
+                if (materialList.size() == 0) {
+                    Toast.makeText(MainActivity.this, "请先添加素材！", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Bitmap tempBmp = Bitmap.createBitmap(src);
 
                 for (StickerView effectView : materialList) {
                     tempBmp = createBitmap(tempBmp,
                             BitmapFactory.decodeFile(effectView.getImgPath()),
                             effectView.getCenterPoint(), effectView.getDegree(), effectView.getScaleValue());
-                    Logger.v("effectView.getScaleValue()="+effectView.getScaleValue());
+                    Logger.v("effectView.getScaleValue()=" + effectView.getScaleValue());
                 }
 
                 saveMyBitmap(tempBmp);
@@ -169,7 +173,7 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
-        Toast.makeText(MainActivity.this, "已保存:"+f.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(MainActivity.this, "已保存:" + f.getAbsolutePath(), Toast.LENGTH_SHORT).show();
     }
 
 }
