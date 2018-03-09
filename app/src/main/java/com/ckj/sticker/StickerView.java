@@ -23,7 +23,6 @@ public class StickerView extends View {
     private String imgPath;
     private Bitmap mainBmp, deleteBmp, controlBmp;
     private int mainBmpWidth, mainBmpHeight, deleteBmpWidth, deleteBmpHeight, controlBmpWidth, controlBmpHeight;
-
     private float[] srcPs, dstPs;
     private Matrix matrix;
     private Paint paint, paintFrame;
@@ -96,9 +95,6 @@ public class StickerView extends View {
         initData(imgPath);
     }
 
-    /**
-     * 初始化数据
-     */
     private void initData(String imgPath) {
         mainBmp = BitmapFactory.decodeFile(imgPath);
         deleteBmp = BitmapFactory.decodeResource(this.context.getResources(), R.drawable.ic_f_delete_normal);
@@ -142,9 +138,6 @@ public class StickerView extends View {
         setMatrix(OPER_DEFAULT);
     }
 
-    /**
-     * 矩阵变换，达到图形平移的目的
-     */
     private void setMatrix(int operationType) {
         switch (operationType) {
             case OPER_TRANSLATE:
@@ -159,6 +152,69 @@ public class StickerView extends View {
         }
 
         matrix.mapPoints(dstPs, srcPs);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        int evX = (int) event.getX();
+        int evY = (int) event.getY();
+
+        if (!isOnPic(evX, evY) && isOnCP(evX, evY) == CTR_NONE) {
+            isSelected = false;
+            invalidate();
+            return false;
+        } else if (isOnCP(evX, evY) == CTR_LEFT_TOP) {
+            mOnRemovedListener.onRemoved();
+            isActive = false;
+            invalidate();
+        } else {
+            mOnSelectedListener.onSelected();
+            bringToFront();
+            requestLayout();
+
+            int operType = OPER_DEFAULT;
+            operType = getOperationType(event);
+
+            switch (operType) {
+                case OPER_TRANSLATE:
+                    if (isOnPic(evX, evY)) {
+                        translate(evX, evY);
+                    }
+                    break;
+                case OPER_ROTATE:
+                    rotate(event);
+                    scale(event);
+                    break;
+            }
+
+            lastPoint.x = evX;
+            lastPoint.y = evY;
+
+            lastOper = operType;
+            isSelected = true;
+            invalidate();
+        }
+
+        return true;
+    }
+
+    /**
+     * 判断点所在的控制点
+     *
+     * @param evX
+     * @param evY
+     * @return
+     */
+    private int isOnCP(int evx, int evy) {
+        Rect rect = new Rect(evx - controlBmpWidth / 2, evy - controlBmpHeight / 2, evx + controlBmpWidth / 2, evy + controlBmpHeight / 2);
+        int res = 0;
+        for (int i = 0; i < dstPs.length; i += 2) {
+            if (rect.contains((int) dstPs[i], (int) dstPs[i + 1])) {
+                return res;
+            }
+            ++res;
+        }
+        return CTR_NONE;
     }
 
     // 判断触摸点是否在贴图上
@@ -177,7 +233,6 @@ public class StickerView extends View {
     }
 
     private int getOperationType(MotionEvent event) {
-
         int evX = (int) event.getX();
         int evY = (int) event.getY();
         int curOper = lastOper;
@@ -204,70 +259,6 @@ public class StickerView extends View {
                 break;
         }
         return curOper;
-
-    }
-
-    /**
-     * 判断点所在的控制点
-     *
-     * @param evX
-     * @param evY
-     * @return
-     */
-    private int isOnCP(int evx, int evy) {
-        Rect rect = new Rect(evx - controlBmpWidth / 2, evy - controlBmpHeight / 2, evx + controlBmpWidth / 2, evy + controlBmpHeight / 2);
-        int res = 0;
-        for (int i = 0; i < dstPs.length; i += 2) {
-            if (rect.contains((int) dstPs[i], (int) dstPs[i + 1])) {
-                return res;
-            }
-            ++res;
-        }
-        return CTR_NONE;
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        int evX = (int) event.getX();
-        int evY = (int) event.getY();
-
-        if (!isOnPic(evX, evY) && isOnCP(evX, evY) == CTR_NONE) {
-            isSelected = false;
-            invalidate();//重绘
-            return false;
-        } else if (isOnCP(evX, evY) == CTR_LEFT_TOP) {
-            mOnRemovedListener.onRemoved();
-            isActive = false;
-            invalidate();//重绘
-        } else {
-            mOnSelectedListener.onSelected();
-            bringToFront();
-            requestLayout();
-
-            int operType = OPER_DEFAULT;
-            operType = getOperationType(event);
-
-            switch (operType) {
-                case OPER_TRANSLATE:
-                    if (isOnPic(evX, evY)) {
-                        translate(evX, evY);
-                    }
-                    break;
-                case OPER_ROTATE:
-                    rotate(event);
-                    scale(event);
-                    break;
-            }
-
-            lastPoint.x = evX;
-            lastPoint.y = evY;
-
-            lastOper = operType;
-            isSelected = true;
-            invalidate();//重绘
-        }
-
-        return true;
     }
 
     /**
@@ -286,7 +277,7 @@ public class StickerView extends View {
         lastPivot.x = prePivot.x;
         lastPivot.y = prePivot.y;
 
-        setMatrix(OPER_TRANSLATE); //设置矩阵
+        setMatrix(OPER_TRANSLATE);
     }
 
     /**
@@ -400,7 +391,8 @@ public class StickerView extends View {
 
 
     @Override
-    public void onDraw(Canvas canvas) {
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
         if (!isActive) {
             return;
         }

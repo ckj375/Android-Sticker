@@ -21,17 +21,17 @@
             android:textColor="@color/white"
             android:textSize="18sp" />
 
-        <Button
+        <TextView
             android:id="@+id/save"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             android:layout_marginRight="16dp"
-            android:background="@drawable/save_bg"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:padding="8dp"
+            android:text="Save"
             android:textColor="@color/white" />
     </RelativeLayout>
 

@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
 
     private static final int REQUEST_FOR_PICTURE = 1;
 
-    private Button saveBtn;
+    private TextView saveBtn;
     private ImageView img;
     private StickerViewLayout mStickerLayout;
     private TextView decorateType;
@@ -45,7 +45,7 @@ public class MainActivity extends Activity {
 
         Logger.addLogAdapter(new AndroidLogAdapter());
 
-        saveBtn = (Button) findViewById(R.id.save);
+        saveBtn = (TextView) findViewById(R.id.save);
         img = (ImageView) findViewById(R.id.src);
         src = BitmapFactory.decodeResource(this.getResources(), R.drawable.bg);
         img.setImageBitmap(src);
@@ -69,6 +69,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 LinkedList<StickerView> materialList = mStickerLayout.getStickerViewList();
+                Logger.v("count=" + materialList.size());
                 if (materialList.size() == 0) {
                     Toast.makeText(MainActivity.this, "请先添加素材！", Toast.LENGTH_SHORT).show();
                     return;
