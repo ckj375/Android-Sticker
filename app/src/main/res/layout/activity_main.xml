@@ -32,7 +32,8 @@
             android:focusableInTouchMode="true"
             android:padding="8dp"
             android:text="Save"
-            android:textColor="@color/white" />
+            android:textColor="@color/white"
+            android:textSize="18sp" />
     </RelativeLayout>
 
     <FrameLayout
