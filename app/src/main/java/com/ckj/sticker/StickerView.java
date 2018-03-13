@@ -26,19 +26,13 @@ public class StickerView extends View {
     private float[] srcPs, dstPs;
     private Matrix matrix;
     private Paint paint, paintFrame;
-    private float deltaX = 0, deltaY = 0;   // 位移值
-    private float scaleValue = 1;           // 贴图素材缩放值
     private Point lastPoint;
     private Point prePivot, lastPivot;
     private float defaultDegree, preDegree, lastDegree;
-    private Point symmetricPoint = new Point();    //当前操作点对称点
-    private Point centerPoint = new Point();       //中心点
-    private Point rightBottomPoint = new Point();  //旋转缩放点
 
     /**
      * 图片操作类型
      */
-    public static final int OPER_DEFAULT = -1;      //默认  
     public static final int OPER_TRANSLATE = 0;     //移动  
     public static final int OPER_SCALE = 1;         //缩放  
     public static final int OPER_ROTATE = 2;        //旋转  
@@ -46,7 +40,7 @@ public class StickerView extends View {
     public int lastOper = OPER_SELECTED;
 
     private boolean isSelected = true;              // 是否选中
-    private boolean isActive = true;               // 是否删除
+    private boolean isActive = true;                // 是否删除
 
     /* 图片控制点 
      * 0--------1
@@ -55,11 +49,10 @@ public class StickerView extends View {
      * |        |
      * 3--------2
      */
-    public static final int CTR_NONE = -1;
+    public static final int CP_NONE = -1;
     public static final int CP_REMOVE = 0;
-    public static final int CTR_RIGHT_BOTTOM = 2;
-    public static final int CTR_MID_MID = 4;
-    public int current_ctr = CTR_NONE;
+    public static final int CP_ROTATE_SCALE = 2;
+    public int current_ctr = CP_NONE;
 
 
     /**
@@ -135,31 +128,15 @@ public class StickerView extends View {
 
         defaultDegree = lastDegree = computeDegree(new Point(mainBmpWidth, mainBmpHeight), new Point(mainBmpWidth / 2, mainBmpHeight / 2));
 
-        setMatrix(OPER_DEFAULT);
-    }
-
-    private void setMatrix(int operationType) {
-        switch (operationType) {
-            case OPER_TRANSLATE:
-                matrix.postTranslate(deltaX, deltaY);
-                break;
-            case OPER_SCALE:
-                matrix.postScale(scaleValue, scaleValue, dstPs[CTR_MID_MID * 2], dstPs[CTR_MID_MID * 2 + 1]);
-                break;
-            case OPER_ROTATE:
-                matrix.postRotate(preDegree - lastDegree, dstPs[CTR_MID_MID * 2], dstPs[CTR_MID_MID * 2 + 1]);
-                break;
-        }
-
         matrix.mapPoints(dstPs, srcPs);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        int evX = (int) event.getX();
-        int evY = (int) event.getY();
+        float evX = event.getX();
+        float evY = event.getY();
 
-        if (!isOnStickerView(evX, evY) && isOnControlPoint(evX, evY) == CTR_NONE) {
+        if (!isOnStickerView((int) evX, (int) evY) && isOnControlPoint((int) evX, (int) evY) == CP_NONE) {
             if (isSelected) {
                 isSelected = false;
                 invalidate();
@@ -168,7 +145,7 @@ public class StickerView extends View {
             return false;
         }
 
-        if (isOnControlPoint(evX, evY) == CP_REMOVE) {
+        if (isOnControlPoint((int) evX, (int) evY) == CP_REMOVE) {
             if (isSelected) {
                 mOnRemovedListener.onRemoved();
                 isActive = false;
@@ -187,22 +164,20 @@ public class StickerView extends View {
         }
 
         int operType = getOperationType(event);
-
         switch (operType) {
             case OPER_TRANSLATE:
                 translate(evX, evY);
                 break;
             case OPER_ROTATE:
-                rotate(event);
-                scale(event);
+                rotate(evX, evY);
+                scale(evX, evY);
                 break;
         }
-
-        lastPoint.x = evX;
-        lastPoint.y = evY;
-
-        lastOper = operType;
         invalidate();
+
+        lastPoint.x = (int) evX;
+        lastPoint.y = (int) evY;
+        lastOper = operType;
 
         return true;
     }
@@ -217,7 +192,7 @@ public class StickerView extends View {
             }
             ++res;
         }
-        return CTR_NONE;
+        return CP_NONE;
     }
 
     // 判断触摸点是否在贴图上
@@ -242,12 +217,12 @@ public class StickerView extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 current_ctr = isOnControlPoint(evX, evY);
-                if (current_ctr != CTR_NONE || isOnStickerView(evX, evY)) {
+                if (current_ctr != CP_NONE || isOnStickerView(evX, evY)) {
                     curOper = OPER_SELECTED;
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (current_ctr == CTR_RIGHT_BOTTOM) {
+                if (current_ctr == CP_ROTATE_SCALE) {
                     curOper = OPER_ROTATE;
                 } else if (lastOper == OPER_SELECTED) {
                     curOper = OPER_TRANSLATE;
@@ -265,13 +240,10 @@ public class StickerView extends View {
 
     /**
      * 移动
-     *
-     * @param evx
-     * @param evy
      */
-    private void translate(int evx, int evy) {
-        deltaX = evx - lastPoint.x;
-        deltaY = evy - lastPoint.y;
+    private void translate(float evX, float evY) {
+        float deltaX = evX - lastPoint.x;
+        float deltaY = evY - lastPoint.y;
 
         prePivot.x += deltaX;
         prePivot.y += deltaY;
@@ -279,14 +251,14 @@ public class StickerView extends View {
         lastPivot.x = prePivot.x;
         lastPivot.y = prePivot.y;
 
-        setMatrix(OPER_TRANSLATE);
+        matrix.postTranslate(deltaX, deltaY);
+        matrix.mapPoints(dstPs, srcPs);
     }
 
-    // 缩放
-    private void scale(MotionEvent event) {
-        float evX = event.getX();
-        float evY = event.getY();
-
+    /**
+     * 缩放
+     */
+    private void scale(float evX, float evY) {
         float px = dstPs[4];
         float py = dstPs[5];
 
@@ -296,20 +268,20 @@ public class StickerView extends View {
         float temp1 = getDistanceOfTwoPoints(px, py, dstPs[8], dstPs[9]);
         float temp2 = getDistanceOfTwoPoints(px_new, py_new, dstPs[8], dstPs[9]);
 
-        this.scaleValue = temp2 / temp1;
+        float scaleValue = temp2 / temp1;// 贴图素材缩放值
         Log.i("img", "scaleValue is " + scaleValue);
         if (getScaleValue() < (float) 0.3 && scaleValue < (float) 1) {
             // 限定最小缩放比为0.3
         } else {
-            setMatrix(OPER_SCALE);
+            matrix.postScale(scaleValue, scaleValue, dstPs[8], dstPs[9]);
+            matrix.mapPoints(dstPs, srcPs);
         }
     }
 
-    // 旋转
-    private void rotate(MotionEvent event) {
-        float evX = event.getX();
-        float evY = event.getY();
-
+    /**
+     * 旋转
+     */
+    private void rotate(float evX, float evY) {
         float px = dstPs[4];
         float py = dstPs[5];
 
@@ -317,7 +289,8 @@ public class StickerView extends View {
         float py_new = py + (evY - lastPoint.y);
 
         preDegree = computeDegree(new Point((int) px_new, (int) py_new), new Point((int) dstPs[8], (int) dstPs[9]));
-        setMatrix(OPER_ROTATE);
+        matrix.postRotate(preDegree - lastDegree, dstPs[8], dstPs[9]);
+        matrix.mapPoints(dstPs, srcPs);
         lastDegree = preDegree;
     }
 
