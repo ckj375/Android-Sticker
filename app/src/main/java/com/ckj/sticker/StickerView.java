@@ -282,39 +282,21 @@ public class StickerView extends View {
         setMatrix(OPER_TRANSLATE);
     }
 
-    /* 图片控制点
-     * 0--------1
-     * |        |
-      *|    4   |
-     * |        |
-     * 3--------2
-     */
+    // 缩放
     private void scale(MotionEvent event) {
+        float evX = event.getX();
+        float evY = event.getY();
 
-        int pointIndex = current_ctr * 2;
+        float px = dstPs[4];
+        float py = dstPs[5];
 
-        float px = dstPs[pointIndex];
-        float py = dstPs[pointIndex + 1];
+        float px_new = px + (evX - lastPoint.x);
+        float py_new = py + (evY - lastPoint.y);
 
-        float evx = event.getX();
-        float evy = event.getY();
-
-        float oppositeX = 0;
-        float oppositeY = 0;
-
-        oppositeX = dstPs[pointIndex - 4];
-        oppositeY = dstPs[pointIndex - 3];
-
-        float temp1 = getDistanceOfTwoPoints(px, py, oppositeX, oppositeY);
-        float temp2 = getDistanceOfTwoPoints(evx, evy, oppositeX, oppositeY);
+        float temp1 = getDistanceOfTwoPoints(px, py, dstPs[8], dstPs[9]);
+        float temp2 = getDistanceOfTwoPoints(px_new, py_new, dstPs[8], dstPs[9]);
 
         this.scaleValue = temp2 / temp1;
-        symmetricPoint.x = (int) oppositeX;
-        symmetricPoint.y = (int) oppositeY;
-        centerPoint.x = (int) (symmetricPoint.x + px) / 2;
-        centerPoint.y = (int) (symmetricPoint.y + py) / 2;
-        rightBottomPoint.x = (int) dstPs[8];
-        rightBottomPoint.y = (int) dstPs[9];
         Log.i("img", "scaleValue is " + scaleValue);
         if (getScaleValue() < (float) 0.3 && scaleValue < (float) 1) {
             // 限定最小缩放比为0.3
@@ -323,20 +305,18 @@ public class StickerView extends View {
         }
     }
 
-    /* 图片控制点
-     * 0--------1
-     * |        |
-      *|    4   |
-     * |        |
-     * 3--------2
-     */
+    // 旋转
     private void rotate(MotionEvent event) {
+        float evX = event.getX();
+        float evY = event.getY();
 
-        if (event.getPointerCount() == 2) {
-            preDegree = computeDegree(new Point((int) event.getX(0), (int) event.getY(0)), new Point((int) event.getX(1), (int) event.getY(1)));
-        } else {
-            preDegree = computeDegree(new Point((int) event.getX(), (int) event.getY()), new Point((int) dstPs[8], (int) dstPs[9]));
-        }
+        float px = dstPs[4];
+        float py = dstPs[5];
+
+        float px_new = px + (evX - lastPoint.x);
+        float py_new = py + (evY - lastPoint.y);
+
+        preDegree = computeDegree(new Point((int) px_new, (int) py_new), new Point((int) dstPs[8], (int) dstPs[9]));
         setMatrix(OPER_ROTATE);
         lastDegree = preDegree;
     }
