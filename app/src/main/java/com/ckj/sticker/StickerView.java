@@ -16,6 +16,7 @@ import android.view.View;
 
 /**
  * 使用矩阵控制图片移动、缩放、旋转
+ * @author ckj375
  */
 public class StickerView extends View {
 
@@ -25,34 +26,31 @@ public class StickerView extends View {
     private int mainBmpWidth, mainBmpHeight, deleteBmpWidth, deleteBmpHeight, controlBmpWidth, controlBmpHeight;
     private float[] srcPs, dstPs;
     private Matrix matrix;
+    private Point lastPoint;                        // 记录最后一次Touch事件触摸点
     private Paint paint, paintFrame;
-    private Point lastPoint;
-    private Point prePivot, lastPivot;
     private float defaultDegree, preDegree, lastDegree;
-
-    /**
-     * 图片操作类型
-     */
-    public static final int OPER_TRANSLATE = 0;     //移动  
-    public static final int OPER_SCALE = 1;         //缩放  
-    public static final int OPER_ROTATE = 2;        //旋转  
-    public static final int OPER_SELECTED = 3;      //选择  
-    public int lastOper = OPER_SELECTED;
-
     private boolean isSelected = true;              // 是否选中
     private boolean isActive = true;                // 是否删除
 
-    /* 图片控制点 
+    /**
+     * 图片控制点
      * 0--------1
      * |        |
       *|    4   |
      * |        |
      * 3--------2
      */
-    public static final int CP_NONE = -1;
-    public static final int CP_REMOVE = 0;
-    public static final int CP_ROTATE_SCALE = 2;
-    public int current_ctr = CP_NONE;
+    private static final int CP_NONE = -1;
+    private static final int CP_REMOVE = 0;
+    private static final int CP_ROTATE_SCALE = 2;
+    private int current_cp = CP_NONE;
+
+    /**
+     * 图片操作类型
+     */
+    public static final int OPER_SELECTED = 1;      // 选择
+    public static final int OPER_TRANSLATE = 2;     // 移动
+    public static final int OPER_ROTATE_SCALE = 3;  // 旋转缩放
 
 
     /**
@@ -107,28 +105,18 @@ public class StickerView extends View {
                 mainBmpWidth / 2, mainBmpHeight / 2
         };
         dstPs = srcPs.clone();
-
         matrix = new Matrix();
 
-        // 平移后中心点位置
-        prePivot = new Point(mainBmpWidth / 2, mainBmpHeight / 2);
-        // 平移前中心点位置
-        lastPivot = new Point(mainBmpWidth / 2, mainBmpHeight / 2);
-
-        // 上一次触摸点位置
         lastPoint = new Point(0, 0);
 
         paint = new Paint();
         paint.setAntiAlias(true);
-
         paintFrame = new Paint();
         paintFrame.setColor(Color.WHITE);
         paintFrame.setStrokeWidth(getResources().getDimension(R.dimen.stickerview_frame_width));
         paintFrame.setAntiAlias(true);
 
         defaultDegree = lastDegree = computeDegree(new Point(mainBmpWidth, mainBmpHeight), new Point(mainBmpWidth / 2, mainBmpHeight / 2));
-
-        matrix.mapPoints(dstPs, srcPs);
     }
 
     @Override
@@ -168,7 +156,7 @@ public class StickerView extends View {
             case OPER_TRANSLATE:
                 translate(evX, evY);
                 break;
-            case OPER_ROTATE:
+            case OPER_ROTATE_SCALE:
                 rotate(evX, evY);
                 scale(evX, evY);
                 break;
@@ -177,12 +165,13 @@ public class StickerView extends View {
 
         lastPoint.x = (int) evX;
         lastPoint.y = (int) evY;
-        lastOper = operType;
 
         return true;
     }
 
-    // 判断触摸点是否在控制点上
+    /**
+     * 判断触摸点是否在控制点上
+     */
     private int isOnControlPoint(int evx, int evy) {
         Rect rect = new Rect(evx - controlBmpWidth / 2, evy - controlBmpHeight / 2, evx + controlBmpWidth / 2, evy + controlBmpHeight / 2);
         int res = 0;
@@ -195,9 +184,10 @@ public class StickerView extends View {
         return CP_NONE;
     }
 
-    // 判断触摸点是否在贴图上
+    /**
+     * 判断触摸点是否在贴图上
+     */
     private boolean isOnStickerView(int x, int y) {
-        // 获取逆向矩阵
         Matrix inMatrix = new Matrix();
         matrix.invert(inMatrix);
 
@@ -211,20 +201,19 @@ public class StickerView extends View {
     }
 
     private int getOperationType(MotionEvent event) {
-        int evX = (int) event.getX();
-        int evY = (int) event.getY();
-        int curOper = lastOper;
+        float evX = event.getX();
+        float evY = event.getY();
+
+        int curOper = 0;
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                current_ctr = isOnControlPoint(evX, evY);
-                if (current_ctr != CP_NONE || isOnStickerView(evX, evY)) {
-                    curOper = OPER_SELECTED;
-                }
+                curOper = OPER_SELECTED;
+                current_cp = isOnControlPoint((int) evX, (int) evY);
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (current_ctr == CP_ROTATE_SCALE) {
-                    curOper = OPER_ROTATE;
-                } else if (lastOper == OPER_SELECTED) {
+                if (current_cp == CP_ROTATE_SCALE) {
+                    curOper = OPER_ROTATE_SCALE;
+                } else {
                     curOper = OPER_TRANSLATE;
                 }
                 break;
@@ -244,12 +233,6 @@ public class StickerView extends View {
     private void translate(float evX, float evY) {
         float deltaX = evX - lastPoint.x;
         float deltaY = evY - lastPoint.y;
-
-        prePivot.x += deltaX;
-        prePivot.y += deltaY;
-
-        lastPivot.x = prePivot.x;
-        lastPivot.y = prePivot.y;
 
         matrix.postTranslate(deltaX, deltaY);
         matrix.mapPoints(dstPs, srcPs);
@@ -297,10 +280,6 @@ public class StickerView extends View {
 
     /**
      * 计算两点与垂直方向夹角
-     *
-     * @param p1
-     * @param p2
-     * @return
      */
     public float computeDegree(Point p1, Point p2) {
         float tran_x = p1.x - p2.x;
@@ -323,15 +302,7 @@ public class StickerView extends View {
 
     /**
      * 计算两个点之间的距离
-     *
-     * @param p1
-     * @param p2
-     * @return
      */
-    private float getDistanceOfTwoPoints(Point p1, Point p2) {
-        return (float) (Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y)));
-    }
-
     private float getDistanceOfTwoPoints(float x1, float y1, float x2, float y2) {
         return (float) (Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)));
     }
