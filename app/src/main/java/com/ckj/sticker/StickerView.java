@@ -20,15 +20,16 @@ import android.view.View;
  */
 public class StickerView extends View {
 
+    private static final String TAG = "StickerView";
     private Context context;
     private String imgPath;
     private Bitmap mainBmp, deleteBmp, controlBmp;
     private int mainBmpWidth, mainBmpHeight, deleteBmpWidth, deleteBmpHeight, controlBmpWidth, controlBmpHeight;
     private float[] srcPs, dstPs;
     private Matrix matrix;
-    private Point lastPoint;                        // 记录最后一次Touch事件触摸点
     private Paint paint, paintFrame;
-    private float defaultDegree, preDegree, lastDegree;
+    private Point lastPoint;                        // 记录最后一次Touch事件触摸点
+    private float defaultDegree, lastDegree;
     private boolean isSelected = true;              // 是否选中
     private boolean isActive = true;                // 是否删除
 
@@ -83,10 +84,10 @@ public class StickerView extends View {
         super(context);
         this.context = context;
         this.imgPath = imgPath;
-        initData(imgPath);
+        initData();
     }
 
-    private void initData(String imgPath) {
+    private void initData() {
         mainBmp = BitmapFactory.decodeFile(imgPath);
         deleteBmp = BitmapFactory.decodeResource(this.context.getResources(), R.drawable.ic_f_delete_normal);
         controlBmp = BitmapFactory.decodeResource(this.context.getResources(), R.drawable.ic_f_rotate_normal);
@@ -107,8 +108,6 @@ public class StickerView extends View {
         dstPs = srcPs.clone();
         matrix = new Matrix();
 
-        lastPoint = new Point(0, 0);
-
         paint = new Paint();
         paint.setAntiAlias(true);
         paintFrame = new Paint();
@@ -116,7 +115,9 @@ public class StickerView extends View {
         paintFrame.setStrokeWidth(getResources().getDimension(R.dimen.stickerview_frame_width));
         paintFrame.setAntiAlias(true);
 
-        defaultDegree = lastDegree = computeDegree(new Point(mainBmpWidth, mainBmpHeight), new Point(mainBmpWidth / 2, mainBmpHeight / 2));
+        lastPoint = new Point(0, 0);
+        defaultDegree = computeDegree(new Point(mainBmpWidth, mainBmpHeight), new Point(mainBmpWidth / 2, mainBmpHeight / 2));
+        lastDegree = defaultDegree;
     }
 
     @Override
@@ -200,6 +201,9 @@ public class StickerView extends View {
         }
     }
 
+    /**
+     * 判断操作类型：移动或旋转缩放
+     */
     private int getOperationType(MotionEvent event) {
         float evX = event.getX();
         float evY = event.getY();
@@ -271,7 +275,7 @@ public class StickerView extends View {
         float px_new = px + (evX - lastPoint.x);
         float py_new = py + (evY - lastPoint.y);
 
-        preDegree = computeDegree(new Point((int) px_new, (int) py_new), new Point((int) dstPs[8], (int) dstPs[9]));
+        float preDegree = computeDegree(new Point((int) px_new, (int) py_new), new Point((int) dstPs[8], (int) dstPs[9]));
         matrix.postRotate(preDegree - lastDegree, dstPs[8], dstPs[9]);
         matrix.mapPoints(dstPs, srcPs);
         lastDegree = preDegree;
@@ -307,7 +311,6 @@ public class StickerView extends View {
         return (float) (Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)));
     }
 
-
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -319,7 +322,6 @@ public class StickerView extends View {
             drawFrame(canvas);//绘制边框,以便测试点的映射
             drawControlPoints(canvas);//绘制控制点图片
         }
-
     }
 
     private void drawFrame(Canvas canvas) {
@@ -334,28 +336,39 @@ public class StickerView extends View {
         canvas.drawBitmap(controlBmp, dstPs[4] - controlBmpWidth / 2, dstPs[5] - controlBmpHeight / 2, paint);
     }
 
-    // 获取饰品旋转角度
+    /**
+     * 获取饰品旋转角度
+     */
     public float getDegree() {
+        Log.d(TAG, "饰品旋转角度:" + (lastDegree - defaultDegree));
         return lastDegree - defaultDegree;
     }
 
-    // 获取饰品中心点坐标
+    /**
+     * 获取饰品中心点坐标
+     */
     public float[] getCenterPoint() {
         float[] centerPoint = new float[2];
         centerPoint[0] = dstPs[8];
         centerPoint[1] = dstPs[9];
+        Log.d(TAG, "饰品中心点坐标:(" + (int) centerPoint[0] + "," + (int) centerPoint[1] + ")");
         return centerPoint;
     }
 
-    // 获取饰品缩放比例(与原图相比)
+    /**
+     * 获取饰品缩放比例(与原图相比)
+     */
     public float getScaleValue() {
         float preDistance = (srcPs[8] - srcPs[0]) * (srcPs[8] - srcPs[0]) + (srcPs[9] - srcPs[1]) * (srcPs[9] - srcPs[1]);
         float lastDistance = (dstPs[8] - dstPs[0]) * (dstPs[8] - dstPs[0]) + (dstPs[9] - dstPs[1]) * (dstPs[9] - dstPs[1]);
         float scaleValue = (float) Math.sqrt(lastDistance / preDistance);
+        Log.d(TAG, "饰品缩放比例:" + scaleValue);
         return scaleValue;
     }
 
-    // 获取素材图片路径
+    /**
+     * 获取素材图片路径
+     */
     public String getImgPath() {
         return imgPath;
     }
