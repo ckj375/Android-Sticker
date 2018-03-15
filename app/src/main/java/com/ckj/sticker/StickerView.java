@@ -16,6 +16,7 @@ import android.view.View;
 
 /**
  * 使用矩阵控制图片移动、缩放、旋转
+ *
  * @author ckj375
  */
 public class StickerView extends View {
@@ -30,14 +31,14 @@ public class StickerView extends View {
     private Paint paint, paintFrame;
     private Point lastPoint;                        // 记录最后一次Touch事件触摸点
     private float defaultDegree, lastDegree;
-    private boolean isSelected = true;              // 是否选中
+    private boolean isSelected = true;              // 默认选中状态
     private boolean isActive = true;                // 是否删除
 
     /**
      * 图片控制点
      * 0--------1
      * |        |
-      *|    4   |
+     * |    4   |
      * |        |
      * 3--------2
      */
@@ -162,6 +163,7 @@ public class StickerView extends View {
                 scale(evX, evY);
                 break;
         }
+        matrix.mapPoints(dstPs, srcPs);
         invalidate();
 
         lastPoint.x = (int) evX;
@@ -239,29 +241,27 @@ public class StickerView extends View {
         float deltaY = evY - lastPoint.y;
 
         matrix.postTranslate(deltaX, deltaY);
-        matrix.mapPoints(dstPs, srcPs);
     }
 
     /**
      * 缩放
      */
     private void scale(float evX, float evY) {
-        float px = dstPs[4];
-        float py = dstPs[5];
+        float centerPointX = dstPs[4];
+        float centerPointY = dstPs[5];
 
-        float px_new = px + (evX - lastPoint.x);
-        float py_new = py + (evY - lastPoint.y);
+        float centerPointX_new = centerPointX + (evX - lastPoint.x);
+        float centerPointY_new = centerPointY + (evY - lastPoint.y);
 
-        float temp1 = getDistanceOfTwoPoints(px, py, dstPs[8], dstPs[9]);
-        float temp2 = getDistanceOfTwoPoints(px_new, py_new, dstPs[8], dstPs[9]);
+        float preDistance = getDistanceOfTwoPoints(new Point((int) centerPointX, (int) centerPointY), new Point((int) dstPs[8], (int) dstPs[9]));
+        float lastDistance = getDistanceOfTwoPoints(new Point((int) centerPointX_new, (int) centerPointY_new), new Point((int) dstPs[8], (int) dstPs[9]));
 
-        float scaleValue = temp2 / temp1;// 贴图素材缩放值
-        Log.i("img", "scaleValue is " + scaleValue);
+        float scaleValue = lastDistance / preDistance;// 贴图素材缩放值
+        Log.d("img", "scaleValue is " + scaleValue);
         if (getScaleValue() < (float) 0.3 && scaleValue < (float) 1) {
             // 限定最小缩放比为0.3
         } else {
             matrix.postScale(scaleValue, scaleValue, dstPs[8], dstPs[9]);
-            matrix.mapPoints(dstPs, srcPs);
         }
     }
 
@@ -269,23 +269,28 @@ public class StickerView extends View {
      * 旋转
      */
     private void rotate(float evX, float evY) {
-        float px = dstPs[4];
-        float py = dstPs[5];
+        float centerPointX = dstPs[4];
+        float centerPointY = dstPs[5];
 
-        float px_new = px + (evX - lastPoint.x);
-        float py_new = py + (evY - lastPoint.y);
+        float centerPointX_new = centerPointX + (evX - lastPoint.x);
+        float centerPointY_new = centerPointY + (evY - lastPoint.y);
 
-        float preDegree = computeDegree(new Point((int) px_new, (int) py_new), new Point((int) dstPs[8], (int) dstPs[9]));
+        float preDegree = computeDegree(new Point((int) centerPointX_new, (int) centerPointY_new), new Point((int) dstPs[8], (int) dstPs[9]));
         matrix.postRotate(preDegree - lastDegree, dstPs[8], dstPs[9]);
-        matrix.mapPoints(dstPs, srcPs);
         lastDegree = preDegree;
     }
 
+    /**
+     * 计算两个点之间的距离
+     */
+    private float getDistanceOfTwoPoints(Point p1, Point p2) {
+        return (float) (Math.sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y)));
+    }
 
     /**
      * 计算两点与垂直方向夹角
      */
-    public float computeDegree(Point p1, Point p2) {
+    private float computeDegree(Point p1, Point p2) {
         float tran_x = p1.x - p2.x;
         float tran_y = p1.y - p2.y;
         float degree = 0.0f;
@@ -304,23 +309,16 @@ public class StickerView extends View {
         return degree;
     }
 
-    /**
-     * 计算两个点之间的距离
-     */
-    private float getDistanceOfTwoPoints(float x1, float y1, float x2, float y2) {
-        return (float) (Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)));
-    }
-
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (!isActive) {
             return;
         }
-        canvas.drawBitmap(mainBmp, matrix, paint);//绘制主图片
+        canvas.drawBitmap(mainBmp, matrix, paint);
         if (isSelected) {
-            drawFrame(canvas);//绘制边框,以便测试点的映射
-            drawControlPoints(canvas);//绘制控制点图片
+            drawFrame(canvas);
+            drawControlPoints(canvas);
         }
     }
 
