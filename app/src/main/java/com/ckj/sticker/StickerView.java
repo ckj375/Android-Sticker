@@ -32,7 +32,7 @@ public class StickerView extends View {
     private Point lastPoint;                        // 记录最后一次Touch事件触摸点
     private float defaultDegree, lastDegree;
     private boolean isSelected = true;              // 默认选中状态
-    private boolean isActive = true;                // 是否删除
+    private boolean isRemoved = false;              // 是否被移除
 
     /**
      * 图片控制点
@@ -126,7 +126,7 @@ public class StickerView extends View {
         float evX = event.getX();
         float evY = event.getY();
 
-        if (!isOnStickerView((int) evX, (int) evY) && isOnControlPoint((int) evX, (int) evY) == CP_NONE) {
+        if (!isOnStickerView((int) evX, (int) evY) && getControlPoint((int) evX, (int) evY) == CP_NONE) {
             if (isSelected) {
                 isSelected = false;
                 invalidate();
@@ -135,10 +135,10 @@ public class StickerView extends View {
             return false;
         }
 
-        if (isOnControlPoint((int) evX, (int) evY) == CP_REMOVE) {
+        if (getControlPoint((int) evX, (int) evY) == CP_REMOVE) {
             if (isSelected) {
                 mOnRemovedListener.onRemoved();
-                isActive = false;
+                isRemoved = true;
                 invalidate();
                 return true;
             }
@@ -173,18 +173,18 @@ public class StickerView extends View {
     }
 
     /**
-     * 判断触摸点是否在控制点上
+     * 获取控制点类型
      */
-    private int isOnControlPoint(int evx, int evy) {
+    private int getControlPoint(int evx, int evy) {
         Rect rect = new Rect(evx - controlBmpWidth / 2, evy - controlBmpHeight / 2, evx + controlBmpWidth / 2, evy + controlBmpHeight / 2);
-        int res = 0;
-        for (int i = 0; i < dstPs.length; i += 2) {
-            if (rect.contains((int) dstPs[i], (int) dstPs[i + 1])) {
-                return res;
-            }
-            ++res;
+        int type = CP_NONE;
+        if (rect.contains((int) dstPs[0], (int) dstPs[1])) {
+            type = CP_REMOVE;
         }
-        return CP_NONE;
+        if (rect.contains((int) dstPs[4], (int) dstPs[5])) {
+            type = CP_ROTATE_SCALE;
+        }
+        return type;
     }
 
     /**
@@ -214,7 +214,7 @@ public class StickerView extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 curOper = OPER_SELECTED;
-                current_cp = isOnControlPoint((int) evX, (int) evY);
+                current_cp = getControlPoint((int) evX, (int) evY);
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (current_cp == CP_ROTATE_SCALE) {
@@ -312,16 +312,18 @@ public class StickerView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (!isActive) {
-            return;
-        }
-        canvas.drawBitmap(mainBmp, matrix, paint);
-        if (isSelected) {
-            drawFrame(canvas);
-            drawControlPoints(canvas);
+        if (!isRemoved) {
+            canvas.drawBitmap(mainBmp, matrix, paint);
+            if (isSelected) {
+                drawFrame(canvas);
+                drawControlPoints(canvas);
+            }
         }
     }
 
+    /**
+     * 绘制边框
+     */
     private void drawFrame(Canvas canvas) {
         canvas.drawLine(dstPs[0], dstPs[1], dstPs[2], dstPs[3], paintFrame);
         canvas.drawLine(dstPs[2], dstPs[3], dstPs[4], dstPs[5], paintFrame);
@@ -329,6 +331,9 @@ public class StickerView extends View {
         canvas.drawLine(dstPs[0], dstPs[1], dstPs[6], dstPs[7], paintFrame);
     }
 
+    /**
+     * 绘制控制按钮
+     */
     private void drawControlPoints(Canvas canvas) {
         canvas.drawBitmap(deleteBmp, dstPs[0] - deleteBmpWidth / 2, dstPs[1] - deleteBmpHeight / 2, paint);
         canvas.drawBitmap(controlBmp, dstPs[4] - controlBmpWidth / 2, dstPs[5] - controlBmpHeight / 2, paint);
