@@ -163,7 +163,6 @@ public class StickerView extends View {
                 scale(evX, evY);
                 break;
         }
-        matrix.mapPoints(dstPs, srcPs);
         invalidate();
 
         lastPoint.x = (int) evX;
@@ -241,6 +240,7 @@ public class StickerView extends View {
         float deltaY = evY - lastPoint.y;
 
         matrix.postTranslate(deltaX, deltaY);
+        matrix.mapPoints(dstPs, srcPs);
     }
 
     /**
@@ -262,6 +262,7 @@ public class StickerView extends View {
             // 限定最小缩放比为0.3
         } else {
             matrix.postScale(scaleValue, scaleValue, dstPs[8], dstPs[9]);
+            matrix.mapPoints(dstPs, srcPs);
         }
     }
 
@@ -278,6 +279,7 @@ public class StickerView extends View {
         float preDegree = computeDegree(new Point((int) centerPointX_new, (int) centerPointY_new), new Point((int) dstPs[8], (int) dstPs[9]));
         matrix.postRotate(preDegree - lastDegree, dstPs[8], dstPs[9]);
         lastDegree = preDegree;
+        matrix.mapPoints(dstPs, srcPs);
     }
 
     /**
