@@ -9,14 +9,12 @@ import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.orhanobut.logger.AndroidLogAdapter;
-import com.orhanobut.logger.Logger;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,6 +26,7 @@ import java.util.LinkedList;
 
 public class MainActivity extends Activity {
 
+    private static final String TAG = "MainActivity";
     private static final int REQUEST_FOR_PICTURE = 1;
 
     private TextView saveBtn;
@@ -41,8 +40,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        Logger.addLogAdapter(new AndroidLogAdapter());
 
         saveBtn = (TextView) findViewById(R.id.save);
         img = (ImageView) findViewById(R.id.src);
@@ -68,7 +65,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 LinkedList<StickerView> materialList = mStickerLayout.getStickerViewList();
-                Logger.v("count=" + materialList.size());
+                Log.v(TAG, "count=" + materialList.size());
                 if (materialList.size() == 0) {
                     Toast.makeText(MainActivity.this, "请先添加素材！", Toast.LENGTH_SHORT).show();
                     return;
@@ -79,7 +76,7 @@ public class MainActivity extends Activity {
                     tempBmp = createBitmap(tempBmp,
                             BitmapFactory.decodeFile(effectView.getImgPath()),
                             effectView.getCenterPoint(), effectView.getDegree(), effectView.getScaleValue());
-                    Logger.v("effectView.getScaleValue()=" + effectView.getScaleValue());
+                    Log.v(TAG, "effectView.getScaleValue()=" + effectView.getScaleValue());
                 }
 
                 saveMyBitmap(tempBmp);
@@ -96,7 +93,7 @@ public class MainActivity extends Activity {
             // 贴图容器中心点
             int centerX = (img.getLeft() + img.getRight()) / 2;
             int centerY = (img.getTop() + img.getBottom()) / 2;
-            Logger.v("centerX=" + centerX + "  centerY=" + centerY);
+            Log.v(TAG, "centerX=" + centerX + "  centerY=" + centerY);
 
             StickerView view = new StickerView(MainActivity.this, imgPath);
 
