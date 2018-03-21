@@ -1,5 +1,4 @@
-# Sticker
-Android Sticker Sample (贴图)
+# Android Sticker
 
-效果图:  
+APP效果图:  
 ![img](https://github.com/ckj375/img-folder/blob/master/android-stickerview/stickerview.png)
