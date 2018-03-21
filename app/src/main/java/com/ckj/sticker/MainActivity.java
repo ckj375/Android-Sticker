@@ -1,6 +1,7 @@
 package com.ckj.sticker;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -29,17 +30,19 @@ public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
     private static final int REQUEST_FOR_PICTURE = 1;
 
+    private Context mContext;
     private TextView saveBtn;
     private ImageView img;
     private StickerViewLayout mStickerLayout;
     private TextView decorateType;
-
     private Bitmap src;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mContext = MainActivity.this;
 
         saveBtn = (TextView) findViewById(R.id.save);
         img = (ImageView) findViewById(R.id.src);
@@ -54,7 +57,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 Intent i = new Intent();
-                i.setClass(MainActivity.this, MaterialActivity.class);
+                i.setClass(mContext, MaterialActivity.class);
                 startActivityForResult(i, REQUEST_FOR_PICTURE);
                 overridePendingTransition(R.anim.push_up, 0);
             }
@@ -67,7 +70,7 @@ public class MainActivity extends Activity {
                 LinkedList<StickerView> materialList = mStickerLayout.getStickerViewList();
                 Log.v(TAG, "count=" + materialList.size());
                 if (materialList.size() == 0) {
-                    Toast.makeText(MainActivity.this, "请先添加素材！", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mContext, "请先添加素材！", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 Bitmap tempBmp = Bitmap.createBitmap(src);
@@ -95,7 +98,7 @@ public class MainActivity extends Activity {
             int centerY = (img.getTop() + img.getBottom()) / 2;
             Log.v(TAG, "centerX=" + centerX + "  centerY=" + centerY);
 
-            StickerView view = new StickerView(MainActivity.this, imgPath);
+            StickerView view = new StickerView(mContext, imgPath);
 
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
@@ -170,7 +173,7 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
-        Toast.makeText(MainActivity.this, "已保存:" + f.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(mContext, "已保存:" + f.getAbsolutePath(), Toast.LENGTH_SHORT).show();
     }
 
 }
